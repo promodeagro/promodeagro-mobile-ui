@@ -1,18 +1,16 @@
 import { Tabs } from "expo-router";
-import { useColorScheme, View } from "react-native";
 import {
-  Home,
-  RotateCcw,
-  Grid3X3,
-  Heart,
-  Search,
-  ShoppingCart,
-  User,
+    Grid3X3,
+    Home,
+    RotateCcw
 } from "lucide-react-native";
+import { Platform, useColorScheme, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const insets = useSafeAreaInsets();
 
   const DuotoneTabIcon = ({
     icon: Icon,
@@ -58,13 +56,17 @@ export default function TabLayout() {
           borderTopWidth: 1,
           borderTopColor: "#F3F4F6",
           paddingTop: 8,
-          paddingBottom: 8,
-          height: 88,
+          paddingBottom: Platform.OS === 'android' ? Math.max(insets.bottom, 8) : 8,
+          height: Platform.OS === 'android' ? 88 + Math.max(insets.bottom - 8, 0) : 88,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.1,
           shadowRadius: 8,
           elevation: 10,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
         },
         tabBarActiveTintColor: "#6366F1",
         tabBarInactiveTintColor: "#9CA3AF",

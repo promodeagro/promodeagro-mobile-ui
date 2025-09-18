@@ -10,7 +10,7 @@ import * as Location from 'expo-location';
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, TouchableOpacity, useColorScheme, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, RefreshControl, ScrollView, Text, TouchableOpacity, useColorScheme, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -153,10 +153,11 @@ export default function HomeScreen() {
 
   // Set default address as selected when it loads
   useEffect(() => {
+    const defaultAddress = defaultAddressData?.data;
     if (defaultAddress && !selectedAddress) {
       dispatch(setSelectedAddress(defaultAddress));
     }
-  }, [defaultAddress, selectedAddress, dispatch]);
+  }, [defaultAddressData, selectedAddress, dispatch]);
 
   // Transform Bengali Special data to match FlashDealsSection expected structure
   const flashDealsProducts = (categoryProducts["bengali-special"] || []).map(product => ({
@@ -406,7 +407,9 @@ export default function HomeScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ 
+          paddingBottom: Platform.OS === 'android' ? 100 + Math.max(insets.bottom - 8, 0) : 100 
+        }}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}

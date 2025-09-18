@@ -1,26 +1,30 @@
-import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-} from "react-native";
-import { Modal } from "react-native";
-import {
-  MapPin,
-  Navigation,
-  Search,
-  Clock,
-  Truck,
-  Store,
-  X,
-  Plus,
-  Home,
-  Briefcase,
-  Heart,
-  Star,
+    Briefcase,
+    Home,
+    MapPin,
+    Navigation,
+    Plus,
+    Search,
+    Star,
+    Store,
+    Truck,
+    X
 } from "lucide-react-native";
+import { useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    Modal,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import { setSelectedAddress } from "../store/Address/AddressSlice";
+import { fetchAllAddresses } from "../store/Address/AddressThunk";
+import status from "../store/Constants";
+import { getFont, getTextStyle } from "../utils/fontStyles";
 
 const LocationSelector = ({
   visible,
@@ -30,8 +34,20 @@ const LocationSelector = ({
   showDeliveryZones = true,
   showOffers = true,
 }) => {
+  const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("current");
+  
+  // Redux selectors
+  const { user } = useSelector((state) => state.login);
+  const { allAddressesData } = useSelector((state) => state.address);
+
+  // Fetch addresses when component mounts or when user changes
+  useEffect(() => {
+    if (visible && user?.userId) {
+      dispatch(fetchAllAddresses(user.userId));
+    }
+  }, [visible, user?.userId, dispatch]);
 
   // Mock data for nearby locations
   const mockLocationData = {
@@ -96,6 +112,14 @@ const LocationSelector = ({
   };
 
   const handleLocationSelect = (location) => {
+    // Store selected address in Redux for use throughout the app
+    if (location.type === "address") {
+      dispatch(setSelectedAddress(location));
+    } else {
+      // Clear selected address for non-address selections (current location, store, etc.)
+      dispatch(setSelectedAddress(null));
+    }
+    
     onLocationSelect(location);
     onClose();
   };
@@ -103,16 +127,17 @@ const LocationSelector = ({
   const renderCurrentLocation = () => (
     <View style={{ padding: 20 }}>
       <Text
-        style={{
+        style={getTextStyle({
           fontSize: 18,
-          fontFamily: "Inter_600SemiBold",
+          fontFamily: getFont("Inter_600SemiBold"),
           color: "#111827",
           marginBottom: 16,
-        }}
+        })}
       >
         Current Location
       </Text>
       
+      {/* Current Location Button */}
       <TouchableOpacity
         style={{
           backgroundColor: "#F3F4F6",
@@ -120,6 +145,7 @@ const LocationSelector = ({
           borderRadius: 12,
           borderWidth: 1,
           borderColor: "#E5E7EB",
+          marginBottom: 16,
         }}
         onPress={() => handleLocationSelect({
           type: "current",
@@ -131,27 +157,288 @@ const LocationSelector = ({
           <Navigation size={20} color="#6366F1" />
           <View style={{ marginLeft: 12, flex: 1 }}>
             <Text
-              style={{
+              style={getTextStyle({
                 fontSize: 16,
-                fontFamily: "Inter_600SemiBold",
+                fontFamily: getFont("Inter_600SemiBold"),
                 color: "#111827",
-              }}
+              })}
             >
               Use Current Location
             </Text>
             <Text
-              style={{
+              style={getTextStyle({
                 fontSize: 14,
-                fontFamily: "Inter_400Regular",
+                fontFamily: getFont("Inter_400Regular"),
                 color: "#6B7280",
                 marginTop: 4,
-              }}
+              })}
             >
               12.9716, 77.5946 (Mock Location)
             </Text>
           </View>
         </View>
       </TouchableOpacity>
+
+      {/* Saved Addresses Section */}
+      <Text
+        style={getTextStyle({
+          fontSize: 18,
+          fontFamily: getFont("Inter_600SemiBold"),
+          color: "#111827",
+          marginBottom: 16,
+        })}
+      >
+        Saved Addresses
+      </Text>
+
+      {/* Loading State */}
+      {allAddressesData.status === status.IN_PROGRESS && (
+        <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+          <ActivityIndicator size="large" color="#6366F1" />
+          <Text
+            style={getTextStyle({
+              fontSize: 14,
+              fontFamily: getFont("Inter_500Medium"),
+              color: "#6B7280",
+              marginTop: 8,
+            })}
+          >
+            Loading addresses...
+          </Text>
+        </View>
+      )}
+
+      {/* Error State */}
+      {allAddressesData.status === status.ERROR && (
+        <View style={{
+          backgroundColor: "#FEF2F2",
+          padding: 16,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: "#FECACA",
+          marginBottom: 16,
+        }}>
+          <Text
+            style={getTextStyle({
+              fontSize: 14,
+              fontFamily: getFont("Inter_500Medium"),
+              color: "#DC2626",
+            })}
+          >
+            Failed to load addresses. Please try again.
+          </Text>
+        </View>
+      )}
+
+
+      {/* Addresses List */}
+      {allAddressesData.status === status.SUCCESS && allAddressesData.data && allAddressesData.data.addresses && (
+        <>
+          {allAddressesData.data.addresses.map((address, index) => (
+            <TouchableOpacity
+              key={address.addressId || index}
+              style={{
+                backgroundColor: "#FFFFFF",
+                padding: 16,
+                borderRadius: 12,
+                marginBottom: 12,
+                borderWidth: 1,
+                borderColor: address.addressId === allAddressesData.data.defaultAddressId ? "#6366F1" : "#E5E7EB",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 2,
+              }}
+              onPress={() => handleLocationSelect({
+                type: "address",
+                addressId: address.addressId,
+                name: address.name,
+                address: address.address,
+                house_number: address.house_number,
+                landmark_area: address.landmark_area,
+                zipCode: address.zipCode,
+                phoneNumber: address.phoneNumber,
+                address_type: address.address_type,
+                isDefault: address.addressId === allAddressesData.data.defaultAddressId,
+              })}
+            >
+              <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+                <View style={{ marginRight: 12 }}>
+                  {address.address_type === "Home" ? (
+                    <Home size={20} color="#10B981" />
+                  ) : address.address_type === "Work" ? (
+                    <Briefcase size={20} color="#3B82F6" />
+                  ) : (
+                    <MapPin size={20} color="#8B5CF6" />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                    <Text
+                      style={getTextStyle({
+                        fontSize: 16,
+                        fontFamily: getFont("Inter_600SemiBold"),
+                        color: "#111827",
+                      })}
+                    >
+                      {address.name}
+                    </Text>
+                    {address.addressId === allAddressesData.data.defaultAddressId && (
+                      <View
+                        style={{
+                          backgroundColor: "#6366F1",
+                          paddingHorizontal: 8,
+                          paddingVertical: 2,
+                          borderRadius: 12,
+                          marginLeft: 8,
+                        }}
+                      >
+                        <Text
+                          style={getTextStyle({
+                            fontSize: 10,
+                            fontFamily: getFont("Inter_600SemiBold"),
+                            color: "#FFFFFF",
+                          })}
+                        >
+                          DEFAULT
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text
+                    style={getTextStyle({
+                      fontSize: 14,
+                      fontFamily: getFont("Inter_400Regular"),
+                      color: "#6B7280",
+                      marginBottom: 2,
+                    })}
+                  >
+                    {address.house_number}, {address.address}
+                  </Text>
+                  {address.landmark_area && (
+                    <Text
+                      style={getTextStyle({
+                        fontSize: 12,
+                        fontFamily: getFont("Inter_400Regular"),
+                        color: "#9CA3AF",
+                      })}
+                    >
+                      Near {address.landmark_area}
+                    </Text>
+                  )}
+                  <Text
+                    style={getTextStyle({
+                      fontSize: 12,
+                      fontFamily: getFont("Inter_500Medium"),
+                      color: "#6B7280",
+                      marginTop: 4,
+                    })}
+                  >
+                    {address.zipCode} • {address.phoneNumber}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+
+      {/* No Addresses State */}
+      {allAddressesData.status === status.SUCCESS && allAddressesData.data && (!allAddressesData.data.addresses || allAddressesData.data.addresses.length === 0) && (
+        <View style={{
+          backgroundColor: "#F9FAFB",
+          padding: 20,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: "#E5E7EB",
+          alignItems: 'center',
+        }}>
+          <MapPin size={32} color="#9CA3AF" />
+          <Text
+            style={getTextStyle({
+              fontSize: 16,
+              fontFamily: getFont("Inter_500Medium"),
+              color: "#6B7280",
+              marginTop: 8,
+              textAlign: 'center',
+            })}
+          >
+            No saved addresses found
+          </Text>
+          <Text
+            style={getTextStyle({
+              fontSize: 14,
+              fontFamily: getFont("Inter_400Regular"),
+              color: "#9CA3AF",
+              marginTop: 4,
+              textAlign: 'center',
+            })}
+          >
+            Add an address to get started
+          </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#6366F1",
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 8,
+              marginTop: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+            onPress={() => {
+              // Navigate to add address screen
+              console.log("Navigate to add address");
+            }}
+          >
+            <Plus size={16} color="#FFFFFF" />
+            <Text
+              style={getTextStyle({
+                fontSize: 14,
+                fontFamily: getFont("Inter_600SemiBold"),
+                color: "#FFFFFF",
+                marginLeft: 4,
+              })}
+            >
+              Add Address
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Add Address Button - Show when addresses exist */}
+      {allAddressesData.status === status.SUCCESS && allAddressesData.data && allAddressesData.data.addresses && allAddressesData.data.addresses.length > 0 && (
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#F3F4F6",
+            padding: 16,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: "#E5E7EB",
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: 8,
+          }}
+          onPress={() => {
+            // Navigate to add address screen
+            console.log("Navigate to add address");
+          }}
+        >
+          <Plus size={20} color="#6366F1" />
+          <Text
+            style={getTextStyle({
+              fontSize: 16,
+              fontFamily: getFont("Inter_600SemiBold"),
+              color: "#6366F1",
+              marginLeft: 8,
+            })}
+          >
+            Add New Address
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -358,11 +645,11 @@ const LocationSelector = ({
             }}
           >
             <Text
-              style={{
+              style={getTextStyle({
                 fontSize: 20,
-                fontFamily: "Inter_700Bold",
+                fontFamily: getFont("Inter_700Bold"),
                 color: "#111827",
-              }}
+              })}
             >
               Select Location
             </Text>
@@ -384,14 +671,14 @@ const LocationSelector = ({
           >
             <Search size={20} color="#6B7280" />
             <TextInput
-              style={{
+              style={getTextStyle({
                 flex: 1,
                 paddingVertical: 12,
                 paddingHorizontal: 12,
                 fontSize: 16,
-                fontFamily: "Inter_400Regular",
+                fontFamily: getFont("Inter_400Regular"),
                 color: "#111827",
-              }}
+              })}
               placeholder="Search for address, landmark, or store"
               placeholderTextColor="#9CA3AF"
               value={searchQuery}
@@ -420,11 +707,11 @@ const LocationSelector = ({
             onPress={() => setSelectedTab("current")}
           >
             <Text
-              style={{
+              style={getTextStyle({
                 fontSize: 14,
-                fontFamily: "Inter_600SemiBold",
+                fontFamily: getFont("Inter_600SemiBold"),
                 color: selectedTab === "current" ? "#6366F1" : "#6B7280",
-              }}
+              })}
             >
               Current
             </Text>
@@ -441,11 +728,11 @@ const LocationSelector = ({
               onPress={() => setSelectedTab("stores")}
             >
               <Text
-                style={{
+                style={getTextStyle({
                   fontSize: 14,
-                  fontFamily: "Inter_600SemiBold",
+                  fontFamily: getFont("Inter_600SemiBold"),
                   color: selectedTab === "stores" ? "#6366F1" : "#6B7280",
-                }}
+                })}
               >
                 Stores
               </Text>
@@ -463,11 +750,11 @@ const LocationSelector = ({
               onPress={() => setSelectedTab("zones")}
             >
               <Text
-                style={{
+                style={getTextStyle({
                   fontSize: 14,
-                  fontFamily: "Inter_600SemiBold",
+                  fontFamily: getFont("Inter_600SemiBold"),
                   color: selectedTab === "zones" ? "#6366F1" : "#6B7280",
-                }}
+                })}
               >
                 Zones
               </Text>
@@ -485,11 +772,11 @@ const LocationSelector = ({
               onPress={() => setSelectedTab("offers")}
             >
               <Text
-                style={{
+                style={getTextStyle({
                   fontSize: 14,
-                  fontFamily: "Inter_600SemiBold",
+                  fontFamily: getFont("Inter_600SemiBold"),
                   color: selectedTab === "offers" ? "#6366F1" : "#6B7280",
-                }}
+                })}
               >
                 Offers
               </Text>

@@ -1,21 +1,25 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { apiService } from "../config/api";
+import { setSelectedAddress } from "../store/Address/AddressSlice";
 import { useCart } from "../utils/CartContext";
 
 export function useCheckout() {
   const router = useRouter();
+  const dispatch = useDispatch();
 
   // Get real user data from Redux
   const { user, isAuthenticated } = useSelector((state) => state.login);
+  const { selectedAddress } = useSelector((state) => state.address);
   const userId = user?.id || user?.userId;
   
   // Get cart functions
   const { clearCart } = useCart();
 
-  const [selectedAddress, setSelectedAddress] = useState(null);
+  // Use Redux selectedAddress instead of local state
+  const updateSelectedAddress = (address) => dispatch(setSelectedAddress(address));
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cod");
   const [selectedDeliverySlot, setSelectedDeliverySlot] = useState(null);
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
@@ -73,7 +77,7 @@ export function useCheckout() {
       // Auto-select default address if available
       const defaultAddr = transformedAddresses.find(addr => addr.is_default);
       if (defaultAddr) {
-        setSelectedAddress(defaultAddr);
+        updateSelectedAddress(defaultAddr);
       }
     } catch (error) {
       console.error('Error fetching addresses:', error);
@@ -355,7 +359,7 @@ export function useCheckout() {
     total,
     addresses,
     selectedAddress,
-    setSelectedAddress,
+    setSelectedAddress: updateSelectedAddress,
     deliverySlots,
     selectedDeliverySlot,
     setSelectedDeliverySlot,

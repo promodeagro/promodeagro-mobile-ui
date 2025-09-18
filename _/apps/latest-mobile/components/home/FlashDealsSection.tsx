@@ -4,6 +4,7 @@ import { ChevronDown, Clock, Minus, Plus, TrendingUp, X, Zap } from "lucide-reac
 import { useState } from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useCart } from "../../utils/CartContext";
+import { getFont, getTextStyle } from "../../utils/fontStyles";
 
 export function FlashDealsSection({ deals }: { deals: any[] }) {
   const router = useRouter();
@@ -40,12 +41,12 @@ export function FlashDealsSection({ deals }: { deals: any[] }) {
           <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
             <Zap size={20} color="#EF4444" />
             <Text
-              style={{
+              style={getTextStyle({
                 fontSize: 20,
-                fontFamily: "Inter_700Bold",
+                fontFamily: getFont("Inter_700Bold"),
                 color: "#111827",
                 marginLeft: 8,
-              }}
+              })}
             >
               Flash Deals
             </Text>
@@ -83,7 +84,7 @@ export function FlashDealsSection({ deals }: { deals: any[] }) {
           }}
           style={{
             flexGrow: 0,
-            height: 220,
+            height: 280, // Adjusted height to reduce extra space after products
           }}
           decelerationRate="fast"
           snapToInterval={176} // card width (160) + margin (16)
@@ -143,6 +144,7 @@ export function FlashDealsSection({ deals }: { deals: any[] }) {
                   elevation: 6,
                   borderWidth: 1,
                   borderColor: "#F3F4F6",
+                  minHeight: 260, // Ensure minimum height for full content
                 }}
               >
                 <View style={{ position: "relative", height: 120 }}>
@@ -209,7 +211,7 @@ export function FlashDealsSection({ deals }: { deals: any[] }) {
                   </View>
                 </View>
 
-                <View style={{ padding: 12 }}>
+                <View style={{ padding: 12, paddingBottom: 16 }}>
                   <Text
                     style={{
                       fontSize: 14,

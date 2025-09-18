@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { categoryProducts } from "../../data/categoryData";
 import { trendingCategories, weeklyStaples } from "../../data/homeScreenData";
+import { setSelectedAddress } from "../../store/Address/AddressSlice";
 import status from "../../store/Constants";
 import { fetchCategories, fetchHomePageProducts, fetchOffers } from "../../store/Home/HomeThunk";
 import { setTestAuth } from "../../store/Signin/SigninSlice";
@@ -56,6 +57,9 @@ export default function HomeScreen() {
     user: null,
     isAuthenticated: false,
     defaultAddressData: { status: '', data: null, error: null },
+  });
+  const { selectedAddress } = useSelector((state) => state?.address || {
+    selectedAddress: null,
   });
   
   // Local state
@@ -146,6 +150,13 @@ export default function HomeScreen() {
       }
     }
   }, [isAuthenticated, user]);
+
+  // Set default address as selected when it loads
+  useEffect(() => {
+    if (defaultAddress && !selectedAddress) {
+      dispatch(setSelectedAddress(defaultAddress));
+    }
+  }, [defaultAddress, selectedAddress, dispatch]);
 
   // Transform Bengali Special data to match FlashDealsSection expected structure
   const flashDealsProducts = (categoryProducts["bengali-special"] || []).map(product => ({
@@ -256,7 +267,10 @@ export default function HomeScreen() {
 
   const handleLocationSelect = (location: any) => {
     console.log("Selected location:", location);
-    // Handle location selection - could update user preferences, refresh nearby stores, etc.
+    
+    // The selected address is now handled in LocationSelector component
+    // and stored in Redux state. We just need to close the modal.
+    setShowLocationSelector(false);
   };
 
   const onRefresh = async () => {
@@ -302,14 +316,15 @@ export default function HomeScreen() {
   const defaultAddress = defaultAddressData?.data;
   
   // Format the address for display
-  // Bold part: address_type (e.g., "Home")
-  // Regular part: full address details
-  const addressType = defaultAddress?.address_type || null;
-  const fullAddress = defaultAddress ? 
+  // Priority: selectedAddress > defaultAddress > userLocation
+  const addressType = selectedAddress?.address_type || defaultAddress?.address_type || null;
+  const fullAddress = selectedAddress ? 
+    `${selectedAddress.house_number}, ${selectedAddress.address}${selectedAddress.landmark_area ? ', ' + selectedAddress.landmark_area : ''}` : 
+    defaultAddress ? 
     `${defaultAddress.house_number}, ${defaultAddress.address}${defaultAddress.landmark_area ? ', ' + defaultAddress.landmark_area : ''}` : 
     null;
     
-  const displayLocation = defaultAddress ? fullAddress : userLocation;
+  const displayLocation = selectedAddress ? fullAddress : (defaultAddress ? fullAddress : userLocation);
 
   // Simple loading component
   const LoadingScreen = () => (

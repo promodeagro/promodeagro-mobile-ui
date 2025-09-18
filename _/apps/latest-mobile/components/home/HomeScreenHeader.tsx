@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Bell, ChevronDown, MapPin, Mic, Search } from "lucide-react-native";
+import { ChevronDown, MapPin, Mic, Search } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
     Animated,
@@ -10,6 +10,7 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
+import { getFont, getTextStyle } from "../../utils/fontStyles";
 
 // Inline weather hook to avoid import issues
 const useLocationWeather = () => {
@@ -204,12 +205,12 @@ export function HomeScreenHeader({
               >
                 <MapPin size={16} color="#6366F1" />
                 <Text
-                  style={{
+                  style={getTextStyle({
                     fontSize: 14,
-                    fontFamily: "Inter_500Medium",
+                    fontFamily: getFont("Inter_500Medium"),
                     color: "#6366F1",
                     marginLeft: 4,
-                  }}
+                  })}
                 >
                   Delivering to
                 </Text>
@@ -225,18 +226,18 @@ export function HomeScreenHeader({
                 }}
               >
                 <Text
-                  style={{
+                  style={getTextStyle({
                     fontSize: 18,
-                    fontFamily: "Inter_700Bold",
+                    fontFamily: getFont("Inter_700Bold"),
                     color: "#6B7280", // Gray color for ellipsis
-                  }}
+                  })}
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
                   {addressType ? (
                     <>
-                      <Text style={{ fontFamily: "Inter_700Bold", color: "#1F2937" }}>{addressType}</Text>
-                      <Text style={{ fontFamily: "Inter_400Regular", color: "#6B7280", fontSize: 16 }}> - {userLocation}</Text>
+                      <Text style={getTextStyle({ fontFamily: getFont("Inter_700Bold"), color: "#1F2937" })}>{addressType}</Text>
+                      <Text style={getTextStyle({ fontFamily: getFont("Inter_400Regular"), color: "#6B7280", fontSize: 16 })}> - {userLocation}</Text>
                     </>
                   ) : (
                     <Text style={{ color: "#1F2937" }}>{userLocation}</Text>
@@ -258,11 +259,11 @@ export function HomeScreenHeader({
                     }}
                   >
                     <Text
-                      style={{
+                      style={getTextStyle({
                         fontSize: 10,
-                        fontFamily: "Inter_600SemiBold",
+                        fontFamily: getFont("Inter_600SemiBold"),
                         color: "#EF4444",
-                      }}
+                      })}
                     >
                       Location Access Required
                     </Text>
@@ -272,35 +273,6 @@ export function HomeScreenHeader({
             </View>
 
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <TouchableOpacity
-                style={{
-                  width: 44,
-                  height: 44,
-                  backgroundColor: "rgba(255, 255, 255, 0.9)",
-                  borderRadius: 22,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginRight: 12,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 8,
-                  elevation: 4,
-                }}
-              >
-                <Bell size={20} color="#6366F1" />
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                    width: 8,
-                    height: 8,
-                    backgroundColor: "#EF4444",
-                    borderRadius: 4,
-                  }}
-                />
-              </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/profile")}
@@ -368,11 +340,11 @@ export function HomeScreenHeader({
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
               <Text
-                style={{
+                style={getTextStyle({
                   fontSize: 15,
-                  fontFamily: "Inter_500Medium",
+                  fontFamily: getFont("Inter_500Medium"),
                   color: "#9CA3AF",
-                }}
+                })}
               >
                 Search "{searchSuggestions[currentSuggestionIndex]}"
               </Text>

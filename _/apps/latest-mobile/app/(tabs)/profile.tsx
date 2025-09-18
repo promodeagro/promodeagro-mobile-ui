@@ -42,6 +42,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from 'react-redux';
 import status from "../../store/Constants";
 import { fetchPersonalDetails } from "../../store/Signin/SigninThunk";
+import { getFont, getTextStyle } from "../../utils/fontStyles";
 
 export default function ProfileScreen() {
   const [fontsLoaded] = useFonts({
@@ -367,11 +368,11 @@ export default function ProfileScreen() {
             <User size={18} color="#6366F1" />
           </View>
           <Text
-            style={{
+            style={getTextStyle({
               fontSize: 28,
-              fontFamily: "Inter_800ExtraBold",
+              fontFamily: getFont("Inter_800ExtraBold"),
               color: "#111827",
-            }}
+            })}
           >
             Profile
           </Text>
@@ -448,12 +449,12 @@ export default function ProfileScreen() {
             }}
           >
             <Text
-              style={{
+              style={getTextStyle({
                 fontSize: 24,
-                fontFamily: "Inter_700Bold",
+                fontFamily: getFont("Inter_700Bold"),
                 color: "#111827",
                 marginRight: 8,
-              }}
+              })}
             >
               {displayName}
             </Text>
@@ -484,12 +485,12 @@ export default function ProfileScreen() {
           </View>
 
           <Text
-            style={{
+            style={getTextStyle({
               fontSize: 16,
-              fontFamily: "Inter_500Medium",
+              fontFamily: getFont("Inter_500Medium"),
               color: "#6B7280",
               marginBottom: 20,
-            }}
+            })}
           >
             +91 {displayMobile}
           </Text>

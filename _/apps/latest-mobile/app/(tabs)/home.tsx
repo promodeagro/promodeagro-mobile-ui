@@ -24,7 +24,6 @@ import { fetchDefaultAddress } from "../../store/Signin/SigninThunk";
 import { useHomeScreenAnimations } from "../../utils/useHomeScreenAnimations";
 
 import { CategoryProductsSection } from "../../components/home/CategoryProductsSection";
-import { FlashDealsSection } from "../../components/home/FlashDealsSection";
 import { HomeScreenHeader } from "../../components/home/HomeScreenHeader";
 import { OffersSliderSection } from "../../components/home/OffersSliderSection";
 import { PopularThisWeekSection } from "../../components/home/PopularThisWeekSection";
@@ -317,15 +316,27 @@ export default function HomeScreen() {
   const defaultAddress = defaultAddressData?.data;
   
   // Format the address for display
-  // Priority: selectedAddress > defaultAddress > userLocation
+  // Priority: selectedAddress > defaultAddress > userLocation > "Add Address"
   const addressType = selectedAddress?.address_type || defaultAddress?.address_type || null;
   const fullAddress = selectedAddress ? 
-    `${selectedAddress.house_number}, ${selectedAddress.address}${selectedAddress.landmark_area ? ', ' + selectedAddress.landmark_area : ''}` : 
+    `${selectedAddress.house_number || ''}, ${selectedAddress.address || ''}${selectedAddress.landmark_area ? ', ' + selectedAddress.landmark_area : ''}` : 
     defaultAddress ? 
-    `${defaultAddress.house_number}, ${defaultAddress.address}${defaultAddress.landmark_area ? ', ' + defaultAddress.landmark_area : ''}` : 
+    `${defaultAddress.house_number || ''}, ${defaultAddress.address || ''}${defaultAddress.landmark_area ? ', ' + defaultAddress.landmark_area : ''}` : 
     null;
     
-  const displayLocation = selectedAddress ? fullAddress : (defaultAddress ? fullAddress : userLocation);
+  // Better fallback logic for display location
+  let displayLocation;
+  if (selectedAddress && fullAddress) {
+    displayLocation = fullAddress;
+  } else if (defaultAddress && fullAddress) {
+    displayLocation = fullAddress;
+  } else if (userLocation && userLocation !== "Current Location" && !userLocation.includes("undefined")) {
+    displayLocation = userLocation;
+  } else if (isAuthenticated) {
+    displayLocation = "Add your address";
+  } else {
+    displayLocation = "Select location to order";
+  }
 
   // Simple loading component
   const LoadingScreen = () => (
@@ -418,9 +429,9 @@ export default function HomeScreen() {
         }
       >
         {/* Flash Deals - First */}
-        <FlashDealsSection
+        {/* <FlashDealsSection
           deals={flashDealsProducts || []}
-        />
+        /> */}
 
         {/* Special Offers */}
         {!offersLoading && offersData?.data && offersData.data.length > 0 && (

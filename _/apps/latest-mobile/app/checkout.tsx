@@ -5,10 +5,12 @@ import {
     Inter_700Bold,
     useFonts,
 } from "@expo-google-fonts/inter";
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef } from "react";
 import { Animated, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSelector } from "react-redux";
 import { AddressSection } from "../components/checkout/AddressSection";
 import { CheckoutHeader } from "../components/checkout/CheckoutHeader";
 import { CheckoutLoader } from "../components/checkout/CheckoutLoader";
@@ -28,7 +30,13 @@ export default function CheckoutScreen() {
     Inter_700Bold,
   });
 
+  const router = useRouter();
   const insets = useSafeAreaInsets();
+  
+  // Get authentication state from Redux
+  const { isAuthenticated } = useSelector((state) => state?.login || {
+    isAuthenticated: false
+  });
   const {
     user,
     cartItems,
@@ -56,6 +64,15 @@ export default function CheckoutScreen() {
   } = useCheckout();
 
   const fadeAnim = useRef(new Animated.Value(0));
+
+  // Authentication protection - redirect to welcome if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      console.log("User not authenticated, redirecting to welcome screen");
+      router.replace("/welcome");
+      return;
+    }
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     if (!isLoading) {

@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import {
     Briefcase,
     Home,
@@ -34,6 +35,7 @@ const LocationSelector = ({
   showDeliveryZones = true,
   showOffers = true,
 }) => {
+  const router = useRouter();
   const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("current");
@@ -389,7 +391,8 @@ const LocationSelector = ({
             }}
             onPress={() => {
               // Navigate to add address screen
-              console.log("Navigate to add address");
+              onClose(); // Close the modal first
+              router.push("/address/new");
             }}
           >
             <Plus size={16} color="#FFFFFF" />
@@ -423,7 +426,8 @@ const LocationSelector = ({
           }}
           onPress={() => {
             // Navigate to add address screen
-            console.log("Navigate to add address");
+            onClose(); // Close the modal first
+            router.push("/address/new");
           }}
         >
           <Plus size={20} color="#6366F1" />

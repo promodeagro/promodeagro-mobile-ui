@@ -1,46 +1,47 @@
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-  useFonts,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    useFonts,
 } from "@expo-google-fonts/inter";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
-  Bell,
-  Camera,
-  ChevronRight,
-  Clock,
-  CreditCard,
-  Crown,
-  Gift,
-  Heart,
-  HelpCircle,
-  LogOut,
-  MapPin,
-  Package,
-  Settings,
-  Shield,
-  Star,
-  User
+    Bell,
+    Camera,
+    ChevronRight,
+    Clock,
+    CreditCard,
+    Crown,
+    Gift,
+    Heart,
+    HelpCircle,
+    LogOut,
+    MapPin,
+    Package,
+    Settings,
+    Shield,
+    Star,
+    User
 } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  useColorScheme,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    useColorScheme,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from 'react-redux';
 import status from "../../store/Constants";
+import { logout } from "../../store/Signin/SigninSlice";
 import { fetchPersonalDetails } from "../../store/Signin/SigninThunk";
 import { getFont, getTextStyle } from "../../utils/fontStyles";
 
@@ -92,7 +93,11 @@ export default function ProfileScreen() {
         text: "Sign Out",
         style: "destructive",
         onPress: () => {
-          console.log('Sign out pressed');
+          console.log('Signing out user...');
+          // Dispatch logout action to clear Redux state
+          dispatch(logout());
+          // Navigate to welcome screen
+          router.replace("/welcome");
         },
       },
     ]);

@@ -34,7 +34,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from 'react-redux';
-import AuthGuard from "../../components/AuthGuard";
+import { CategoryProductsSection } from "../../components/home/CategoryProductsSection";
 import OrderCancellationModal from "../../components/orders/OrderCancellationModal";
 import OrderModificationModal from "../../components/orders/OrderModificationModal";
 import { apiService } from "../../config/api";
@@ -68,17 +68,28 @@ export default function OrdersScreen() {
   const { user, isAuthenticated } = useSelector((state) => state.login);
   const userId = user?.id || user?.userId;
 
+  // Get home page products data from Redux (same as home page)
+  const { homePageProductsData } = useSelector((state) => state?.home || {
+    homePageProductsData: { status: '', data: [], error: null }
+  });
+
   // Get cart functions
   const { addToCart } = useCart();
+
+  // Get category data from API (same as home page) - Bengali Special, Fresh Fruits, Fresh Vegetables
+  const categoryData = homePageProductsData?.data?.filter(
+    category => ["Bengali Special", "Fresh Fruits", "Fresh Vegetables"].includes(category.category)
+  ) || [];
 
   // Fetch orders from API when user is authenticated and we have userId
   useEffect(() => {
     if (isAuthenticated && userId) {
       fetchOrders();
-    } else if (isAuthenticated && !userId) {
-      console.warn("User is authenticated but no userId found");
+    } else {
+      // User is not authenticated or no userId - show empty state
       setLoading(false);
-      setError("User ID not found");
+      setError(null);
+      setOrders([]);
     }
   }, [isAuthenticated, userId]);
 
@@ -104,8 +115,14 @@ export default function OrdersScreen() {
       }
     } catch (err) {
       console.error("Error fetching orders:", err);
-      setError(err.message || "Failed to fetch orders");
-      setOrders([]);
+      // Handle 404 as "no orders found" instead of error
+      if (err.message && err.message.includes('404')) {
+        setError(null);
+        setOrders([]);
+      } else {
+        setError(err.message || "Failed to fetch orders");
+        setOrders([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -392,6 +409,7 @@ export default function OrdersScreen() {
     if (activeTab === "all") return true;
     return order.status === activeTab;
   });
+
 
   const OrderCard = ({ order }: { order: any }) => (
     <TouchableOpacity
@@ -708,8 +726,7 @@ export default function OrdersScreen() {
   }
 
   return (
-    <AuthGuard>
-      <View style={{ flex: 1, backgroundColor: "#FAFBFC" }}>
+    <View style={{ flex: 1, backgroundColor: "#FAFBFC" }}>
         <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* Header */}
@@ -958,7 +975,7 @@ export default function OrdersScreen() {
                 textAlign: "center",
               }}
             >
-              No Orders Found
+              {!isAuthenticated ? "Sign In to View Orders" : "No Orders Found"}
             </Text>
 
             <Text
@@ -972,19 +989,22 @@ export default function OrdersScreen() {
                 paddingHorizontal: 40,
               }}
             >
-              {activeTab === "all"
+              {!isAuthenticated
+                ? "Please sign in to view your order history and track your deliveries."
+                : activeTab === "all"
                 ? "You haven't placed any orders yet. Start shopping to see your orders here!"
                 : `No ${activeTab.replace("_", " ")} orders found.`}
             </Text>
 
-            {activeTab === "all" && (
+            {/* Show Sign In button for unauthenticated users */}
+            {!isAuthenticated && (
               <TouchableOpacity
-                onPress={() => router.push("/(tabs)/home")}
+                onPress={() => router.push("/auth")}
                 style={{
                   backgroundColor: "#8B5CF6",
                   borderRadius: 16,
                   paddingVertical: 16,
-                  paddingHorizontal: 32,
+                  paddingHorizontal: 24,
                   flexDirection: "row",
                   alignItems: "center",
                   shadowColor: "#8B5CF6",
@@ -992,6 +1012,7 @@ export default function OrdersScreen() {
                   shadowOpacity: 0.3,
                   shadowRadius: 16,
                   elevation: 8,
+                  marginBottom: 32,
                 }}
               >
                 <Text
@@ -1002,10 +1023,22 @@ export default function OrdersScreen() {
                     marginRight: 8,
                   }}
                 >
-                  Start Shopping
+                  Sign In
                 </Text>
                 <ChevronRight size={20} color="#FFFFFF" />
               </TouchableOpacity>
+            )}
+
+            {/* Category Products Section - Bengali Special, Fresh Fruits, Fresh Vegetables */}
+            {categoryData.length > 0 && (
+              <View style={{ 
+                width: "100%", 
+                marginTop: 20,
+                paddingBottom: 20,
+                backgroundColor: "#FAFBFC"
+              }}>
+                <CategoryProductsSection categoryData={categoryData} />
+              </View>
             )}
           </View>
         ) : (
@@ -1135,6 +1168,5 @@ export default function OrdersScreen() {
         onCancel={handleCancelOrder}
       />
       </View>
-    </AuthGuard>
   );
 }

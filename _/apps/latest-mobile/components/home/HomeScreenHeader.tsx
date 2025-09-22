@@ -217,38 +217,65 @@ export function HomeScreenHeader({
               </View>
 
               <TouchableOpacity
-                onPress={locationPermission === 'granted' ? onLocationPress : onRequestLocation}
+                onPress={onLocationPress}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
                   marginBottom: 4,
                   flex: 1,
+                  backgroundColor: userLocation.includes("Add") || userLocation.includes("Select") ? "#FEF3C7" : "transparent",
+                  paddingHorizontal: userLocation.includes("Add") || userLocation.includes("Select") ? 12 : 0,
+                  paddingVertical: userLocation.includes("Add") || userLocation.includes("Select") ? 8 : 0,
+                  borderRadius: userLocation.includes("Add") || userLocation.includes("Select") ? 12 : 0,
+                  borderWidth: userLocation.includes("Add") || userLocation.includes("Select") ? 1 : 0,
+                  borderColor: userLocation.includes("Add") || userLocation.includes("Select") ? "#F59E0B" : "transparent",
                 }}
               >
-                <Text
-                  style={getTextStyle({
-                    fontSize: 18,
-                    fontFamily: getFont("Inter_700Bold"),
-                    color: "#6B7280", // Gray color for ellipsis
-                  })}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {addressType ? (
-                    <>
-                      <Text style={getTextStyle({ fontFamily: getFont("Inter_700Bold"), color: "#1F2937" })}>{addressType}</Text>
-                      <Text style={getTextStyle({ fontFamily: getFont("Inter_400Regular"), color: "#6B7280", fontSize: 16 })}> - {userLocation}</Text>
-                    </>
-                  ) : (
-                    <Text style={{ color: "#1F2937" }}>{userLocation}</Text>
-                  )}
-                </Text>
-                <ChevronDown
-                  size={16}
-                  color="#6B7280"
-                  style={{ marginLeft: 4, marginRight: 8 }}
-                />
-                {locationPermission === 'denied' && (
+                {userLocation.includes("Add") || userLocation.includes("Select") ? (
+                  <>
+                    <MapPin size={16} color="#F59E0B" style={{ marginRight: 8 }} />
+                    <Text
+                      style={getTextStyle({
+                        fontSize: 16,
+                        fontFamily: getFont("Inter_600SemiBold"),
+                        color: "#F59E0B",
+                        flex: 1,
+                      })}
+                    >
+                      {userLocation}
+                    </Text>
+                    <ChevronDown size={16} color="#F59E0B" />
+                  </>
+                ) : (
+                  <>
+                    <Text
+                      style={getTextStyle({
+                        fontSize: 18,
+                        fontFamily: getFont("Inter_700Bold"),
+                        color: "#6B7280",
+                        flex: 1,
+                      })}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {addressType ? (
+                        <>
+                          <Text style={getTextStyle({ fontFamily: getFont("Inter_700Bold"), color: "#1F2937" })}>{addressType}</Text>
+                          <Text style={getTextStyle({ fontFamily: getFont("Inter_400Regular"), color: "#6B7280", fontSize: 16 })}> - {userLocation}</Text>
+                        </>
+                      ) : (
+                        <Text style={{ color: "#1F2937" }}>{userLocation}</Text>
+                      )}
+                    </Text>
+                    <ChevronDown
+                      size={16}
+                      color="#6B7280"
+                      style={{ marginLeft: 4, marginRight: 8 }}
+                    />
+                  </>
+                )}
+                
+                {locationPermission === 'denied' && !userLocation.includes("Add") && !userLocation.includes("Select") && (
                   <View
                     style={{
                       backgroundColor: "#FEF2F2",

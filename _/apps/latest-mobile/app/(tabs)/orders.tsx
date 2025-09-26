@@ -696,8 +696,8 @@ export default function OrdersScreen() {
             style={{
               backgroundColor: "#8B5CF6",
               borderRadius: 12,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
               alignItems: "center",
               shadowColor: "#8B5CF6",
               shadowOffset: { width: 0, height: 4 },
@@ -721,8 +721,30 @@ export default function OrdersScreen() {
     </TouchableOpacity>
   );
 
-  if (!fontsLoaded) {
-    return null;
+  // Loading screen component
+  const LoadingScreen = () => (
+    <View style={{ 
+      flex: 1, 
+      backgroundColor: "#FAFBFC",
+      justifyContent: "center",
+      alignItems: "center",
+    }}>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <ActivityIndicator size="large" color="#8B5CF6" />
+      <Text style={{
+        fontSize: 16,
+        fontFamily: "Inter_500Medium",
+        color: "#6B7280",
+        marginTop: 16,
+        textAlign: "center"
+      }}>
+        Loading Orders...
+      </Text>
+    </View>
+  );
+
+  if (!fontsLoaded || loading) {
+    return <LoadingScreen />;
   }
 
   return (
@@ -732,9 +754,9 @@ export default function OrdersScreen() {
       {/* Header */}
       <View
         style={{
-          paddingTop: insets.top + 20,
-          paddingHorizontal: 24,
-          paddingBottom: 20,
+          paddingTop: insets.top + 16,
+          paddingHorizontal: 20,
+          paddingBottom: 16,
           backgroundColor: "#FFFFFF",
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
@@ -745,7 +767,7 @@ export default function OrdersScreen() {
       >
         <Text
           style={{
-            fontSize: 28,
+            fontSize: 24,
             fontFamily: "Inter_800ExtraBold",
             color: "#111827",
             marginBottom: 8,
@@ -798,8 +820,8 @@ export default function OrdersScreen() {
               key={tab.key}
               onPress={() => setActiveTab(tab.key)}
               style={{
-                paddingHorizontal: 20,
-                paddingVertical: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
                 borderRadius: 24,
                 backgroundColor: activeTab === tab.key ? "#8B5CF6" : "#FFFFFF",
                 flexDirection: "row",
@@ -858,8 +880,8 @@ export default function OrdersScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: 24,
-          paddingTop: 20,
+          paddingHorizontal: 20,
+          paddingTop: 16,
           paddingBottom: insets.bottom + 100,
         }}
         showsVerticalScrollIndicator={false}
@@ -927,8 +949,8 @@ export default function OrdersScreen() {
               style={{
                 backgroundColor: "#8B5CF6",
                 borderRadius: 12,
-                paddingVertical: 12,
-                paddingHorizontal: 24,
+                paddingVertical: 8,
+                paddingHorizontal: 16,
               }}
             >
               <Text
@@ -968,7 +990,7 @@ export default function OrdersScreen() {
 
             <Text
               style={{
-                fontSize: 24,
+                fontSize: 20,
                 fontFamily: "Inter_700Bold",
                 color: "#111827",
                 marginBottom: 8,
@@ -986,7 +1008,7 @@ export default function OrdersScreen() {
                 textAlign: "center",
                 lineHeight: 24,
                 marginBottom: 32,
-                paddingHorizontal: 40,
+                paddingHorizontal: 24,
               }}
             >
               {!isAuthenticated
@@ -1002,9 +1024,9 @@ export default function OrdersScreen() {
                 onPress={() => router.push("/auth")}
                 style={{
                   backgroundColor: "#8B5CF6",
-                  borderRadius: 16,
-                  paddingVertical: 16,
-                  paddingHorizontal: 24,
+                  borderRadius: 12,
+                  paddingVertical: 12,
+                  paddingHorizontal: 20,
                   flexDirection: "row",
                   alignItems: "center",
                   shadowColor: "#8B5CF6",
@@ -1080,7 +1102,7 @@ export default function OrdersScreen() {
                 <View style={{ alignItems: "center" }}>
                   <Text
                     style={{
-                      fontSize: 28,
+                      fontSize: 22,
                       fontFamily: "Inter_800ExtraBold",
                       color: "#8B5CF6",
                     }}
@@ -1101,7 +1123,7 @@ export default function OrdersScreen() {
                 <View style={{ alignItems: "center" }}>
                   <Text
                     style={{
-                      fontSize: 28,
+                      fontSize: 22,
                       fontFamily: "Inter_800ExtraBold",
                       color: "#10B981",
                     }}
@@ -1122,7 +1144,7 @@ export default function OrdersScreen() {
                 <View style={{ alignItems: "center" }}>
                   <Text
                     style={{
-                      fontSize: 28,
+                      fontSize: 22,
                       fontFamily: "Inter_800ExtraBold",
                       color: "#F59E0B",
                     }}

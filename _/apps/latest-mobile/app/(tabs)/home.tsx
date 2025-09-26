@@ -26,7 +26,6 @@ import { useHomeScreenAnimations } from "../../utils/useHomeScreenAnimations";
 import { CategoryProductsSection } from "../../components/home/CategoryProductsSection";
 import { HomeScreenHeader } from "../../components/home/HomeScreenHeader";
 import { OffersSliderSection } from "../../components/home/OffersSliderSection";
-import { PopularThisWeekSection } from "../../components/home/PopularThisWeekSection";
 import { TrendingCategoriesSection } from "../../components/home/TrendingCategoriesSection";
 import { WeeklyStaplesSection } from "../../components/home/WeeklyStaplesSection";
 import LocationSelector from "../../components/LocationSelector";
@@ -222,7 +221,7 @@ export default function HomeScreen() {
   }));
 
   // Mock data for popular products
-  const popularProducts = weeklyStaples.slice(0, 8).map(item => ({
+  /* const popularProducts = weeklyStaples.slice(0, 8).map(item => ({
     id: item.id,
     name: item.title,
     rating: 4.5,
@@ -257,7 +256,7 @@ export default function HomeScreen() {
       }
     ],
     in_stock: item.inStock
-  }));
+  })); */
 
 
 
@@ -444,9 +443,9 @@ export default function HomeScreen() {
         )}
         
         {/* Bought Often (Popular This Week) */}
-        <PopularThisWeekSection
+        {/* <PopularThisWeekSection
           items={popularProducts || []}
-        />
+        /> */}
         
         {/* Weekly Staples */}
         <WeeklyStaplesSection

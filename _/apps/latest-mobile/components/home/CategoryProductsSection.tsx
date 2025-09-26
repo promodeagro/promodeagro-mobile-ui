@@ -75,7 +75,7 @@ export function CategoryProductsSection({ categoryData }: { categoryData: Catego
               fontSize: 20,
               fontFamily: "Inter_700Bold",
               color: "#111827",
-              paddingHorizontal: 24,
+              paddingHorizontal: 16,
               marginBottom: 16,
             }}
           >
@@ -85,7 +85,7 @@ export function CategoryProductsSection({ categoryData }: { categoryData: Catego
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: 24 }}
+            contentContainerStyle={{ paddingLeft: 16 }}
           >
             {category.items.map((item) => {
               // Get the first available variation

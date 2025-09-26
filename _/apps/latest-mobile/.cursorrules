@@ -1,0 +1,34 @@
+# Cursor AI Rules for Expo Development
+
+## Documentation References
+- Always reference Expo documentation at https://docs.expo.dev/ when providing Expo-related advice
+- For API usage, check the latest Expo SDK documentation
+- When suggesting code changes, ensure compatibility with Expo SDK ~53.0.20
+
+## Project Context
+- This is an Expo React Native project using TypeScript
+- Using Expo Router for navigation (file-based routing)
+- Redux Toolkit for state management
+- React Query for API calls
+- Current Expo SDK version: ~53.0.20
+
+## Code Standards
+- Follow Expo best practices from official documentation
+- Use TypeScript for all new files
+- Prefer Expo APIs over React Native APIs when available
+- Always check Expo docs for the latest API changes
+
+## Common Expo APIs in this project:
+- expo-router for navigation
+- expo-image for optimized images
+- expo-font for custom fonts
+- expo-location for location services
+- expo-blur for blur effects
+- expo-linear-gradient for gradients
+- expo-haptics for haptic feedback
+
+## When providing solutions:
+1. Check if Expo has a built-in solution first
+2. Reference the relevant Expo documentation
+3. Ensure compatibility with the current SDK version
+4. Provide TypeScript-compatible code examples

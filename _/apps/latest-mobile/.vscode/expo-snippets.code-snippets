@@ -1,0 +1,46 @@
+{
+  "Expo Router Navigation": {
+    "prefix": "expo-router-nav",
+    "body": [
+      "// Expo Router Navigation",
+      "// Docs: https://docs.expo.dev/router/navigating-pages/",
+      "import { useRouter } from 'expo-router';",
+      "",
+      "const router = useRouter();",
+      "router.push('/${1:route}');"
+    ],
+    "description": "Expo Router navigation with docs link"
+  },
+  "Expo Image Component": {
+    "prefix": "expo-image",
+    "body": [
+      "// Expo Image Component",
+      "// Docs: https://docs.expo.dev/versions/latest/sdk/image/",
+      "import { Image } from 'expo-image';",
+      "",
+      "<Image",
+      "  source={{ uri: '${1:imageUrl}' }}",
+      "  style={{ width: ${2:200}, height: ${3:200} }}",
+      "  contentFit=\"${4:cover}\"",
+      "/>"
+    ],
+    "description": "Expo Image component with docs link"
+  },
+  "Expo Font Loading": {
+    "prefix": "expo-fonts",
+    "body": [
+      "// Expo Font Loading",
+      "// Docs: https://docs.expo.dev/versions/latest/sdk/font/",
+      "import { useFonts } from 'expo-font';",
+      "",
+      "const [fontsLoaded] = useFonts({",
+      "  '${1:FontName}': require('./assets/fonts/${2:font-file}.ttf'),",
+      "});",
+      "",
+      "if (!fontsLoaded) {",
+      "  return null;",
+      "}"
+    ],
+    "description": "Expo font loading with docs link"
+  }
+}

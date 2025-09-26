@@ -1,0 +1,42 @@
+{
+  "expo_documentation": {
+    "name": "Expo Documentation Bookmarks",
+    "bookmarks": [
+      {
+        "title": "Expo Docs Home",
+        "url": "https://docs.expo.dev/",
+        "category": "main"
+      },
+      {
+        "title": "Get Started",
+        "url": "https://docs.expo.dev/get-started/introduction/",
+        "category": "getting-started"
+      },
+      {
+        "title": "Expo Router",
+        "url": "https://docs.expo.dev/router/introduction/",
+        "category": "navigation"
+      },
+      {
+        "title": "API Reference",
+        "url": "https://docs.expo.dev/versions/latest/",
+        "category": "api"
+      },
+      {
+        "title": "EAS Build",
+        "url": "https://docs.expo.dev/build/introduction/",
+        "category": "deployment"
+      },
+      {
+        "title": "Config Plugins",
+        "url": "https://docs.expo.dev/config-plugins/introduction/",
+        "category": "configuration"
+      },
+      {
+        "title": "Debugging",
+        "url": "https://docs.expo.dev/debugging/runtime-issues/",
+        "category": "development"
+      }
+    ]
+  }
+}

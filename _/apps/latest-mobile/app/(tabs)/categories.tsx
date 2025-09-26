@@ -1,10 +1,10 @@
 import {
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  useFonts,
 } from "@expo-google-fonts/inter";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -12,13 +12,14 @@ import { StatusBar } from "expo-status-bar";
 import { ArrowRight, Grid3X3, Search, Sparkles } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
-    Dimensions,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    useColorScheme,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useColorScheme,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from 'react-redux';
@@ -70,7 +71,7 @@ export default function CategoriesScreen() {
   const transformedCategories = categoriesData?.data?.map((category: any, index: number) => ({
     id: index + 1,
     title: category.CategoryName || category.name,
-    subtitle: `${category.Subcategories?.length || category.subcategories?.length || 0}+ items`,
+    subtitle: `Browse ${(category.CategoryName || category.name)?.toLowerCase()}`,
     image: category.image_url,
     route: `/category/${(category.CategoryName || category.name)?.toLowerCase().replace(/\s+/g, '-')}`,
     bgColor: "#FDF4FF",
@@ -79,8 +80,30 @@ export default function CategoriesScreen() {
     subcategories: category.Subcategories || category.subcategories || []
   })) || [];
 
-  if (!fontsLoaded) {
-    return null;
+  // Loading screen component
+  const LoadingScreen = () => (
+    <View style={{ 
+      flex: 1, 
+      backgroundColor: "#FAFBFC",
+      justifyContent: "center",
+      alignItems: "center",
+    }}>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <ActivityIndicator size="large" color="#8B5CF6" />
+      <Text style={{
+        fontSize: 16,
+        fontFamily: "Inter_500Medium",
+        color: "#6B7280",
+        marginTop: 16,
+        textAlign: "center"
+      }}>
+        Loading Categories...
+      </Text>
+    </View>
+  );
+
+  if (!fontsLoaded || categoriesLoading) {
+    return <LoadingScreen />;
   }
 
   const filteredCategories = transformedCategories.filter((category) =>
@@ -94,9 +117,9 @@ export default function CategoriesScreen() {
       {/* Header */}
       <View
         style={{
-          paddingTop: insets.top + 20,
-          paddingHorizontal: 24,
-          paddingBottom: 20,
+          paddingTop: insets.top + 16,
+          paddingHorizontal: 20,
+          paddingBottom: 16,
           backgroundColor: "#FFFFFF",
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
@@ -127,7 +150,7 @@ export default function CategoriesScreen() {
           </View>
           <Text
             style={{
-              fontSize: 28,
+              fontSize: 24,
               fontFamily: "Inter_800ExtraBold",
               color: "#111827",
             }}
@@ -208,8 +231,8 @@ export default function CategoriesScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: 24,
-          paddingTop: 20,
+          paddingHorizontal: 20,
+          paddingTop: 16,
           paddingBottom: insets.bottom + 100,
         }}
         showsVerticalScrollIndicator={false}
@@ -234,6 +257,119 @@ export default function CategoriesScreen() {
             </Text>
           </View>
         ) : (
+          <>
+            {/* First Category - Full Width */}
+            {filteredCategories.length > 0 && (
+            <TouchableOpacity
+              key={filteredCategories[0].id}
+              onPress={() => router.push(filteredCategories[0].route)}
+              style={{
+                width: "100%",
+                backgroundColor: "#FFFFFF",
+                borderRadius: 20,
+                marginBottom: 20,
+                overflow: "hidden",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.12,
+                shadowRadius: 16,
+                elevation: 6,
+                borderWidth: 1,
+                borderColor: "#F3F4F6",
+              }}
+            >
+              {/* Category Image with Overlay */}
+              <View style={{ position: "relative", height: 180 }}>
+                <Image
+                  source={{ uri: filteredCategories[0].image }}
+                  style={{ width: "100%", height: "100%" }}
+                  contentFit="cover"
+                />
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: "rgba(0,0,0,0.1)",
+                  }}
+                />
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 16,
+                    right: 16,
+                    backgroundColor: "rgba(255,255,255,0.95)",
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 12,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontFamily: "Inter_600SemiBold",
+                      color: "#8B5CF6",
+                    }}
+                  >
+                    FEATURED
+                  </Text>
+                </View>
+              </View>
+
+              {/* Category Info */}
+              <View style={{ padding: 20 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 20,
+                        fontFamily: "Inter_700Bold",
+                        color: "#111827",
+                        marginBottom: 6,
+                        lineHeight: 24,
+                      }}
+                      numberOfLines={2}
+                    >
+                      {filteredCategories[0].title}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontFamily: "Inter_500Medium",
+                        color: "#6B7280",
+                      }}
+                    >
+                      {filteredCategories[0].subtitle}
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      backgroundColor: "#F3F4F6",
+                      borderRadius: 20,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderWidth: 1,
+                      borderColor: "#8B5CF6",
+                    }}
+                  >
+                    <ArrowRight size={20} color="#8B5CF6" />
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {/* Remaining Categories - Grid Layout */}
           <View
             style={{
               flexDirection: "row",
@@ -241,7 +377,7 @@ export default function CategoriesScreen() {
               justifyContent: "space-between",
             }}
           >
-            {filteredCategories.map((category) => (
+            {filteredCategories.slice(1).map((category) => (
             <TouchableOpacity
               key={category.id}
               onPress={() => router.push(category.route)}
@@ -277,29 +413,6 @@ export default function CategoriesScreen() {
                     backgroundColor: "rgba(0,0,0,0.1)",
                   }}
                 />
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 12,
-                    left: 12,
-                    backgroundColor: "rgba(255,255,255,0.95)",
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: category.borderColor,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontFamily: "Inter_600SemiBold",
-                      color: category.accentColor,
-                    }}
-                  >
-                    {category.subcategories?.length || 0} items
-                  </Text>
-                </View>
                 <View
                   style={{
                     position: "absolute",
@@ -374,6 +487,7 @@ export default function CategoriesScreen() {
             </TouchableOpacity>
             ))}
           </View>
+          </>
         )}
 
         {/* Empty State */}
@@ -401,7 +515,7 @@ export default function CategoriesScreen() {
             </View>
             <Text
               style={{
-                fontSize: 24,
+                fontSize: 20,
                 fontFamily: "Inter_700Bold",
                 color: "#111827",
                 marginBottom: 8,
@@ -417,7 +531,7 @@ export default function CategoriesScreen() {
                 color: "#6B7280",
                 textAlign: "center",
                 lineHeight: 24,
-                paddingHorizontal: 40,
+                paddingHorizontal: 24,
               }}
             >
               Try searching with different keywords or browse all available
@@ -460,7 +574,7 @@ export default function CategoriesScreen() {
               <View style={{ alignItems: "center" }}>
                 <Text
                   style={{
-                    fontSize: 24,
+                    fontSize: 20,
                     fontFamily: "Inter_800ExtraBold",
                     color: "#8B5CF6",
                   }}
@@ -480,7 +594,7 @@ export default function CategoriesScreen() {
               <View style={{ alignItems: "center" }}>
                 <Text
                   style={{
-                    fontSize: 24,
+                    fontSize: 20,
                     fontFamily: "Inter_800ExtraBold",
                     color: "#10B981",
                   }}

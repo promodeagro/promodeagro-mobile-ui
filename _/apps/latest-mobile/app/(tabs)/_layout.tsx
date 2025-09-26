@@ -55,9 +55,10 @@ export default function TabLayout() {
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
           borderTopColor: "#F3F4F6",
-          paddingTop: 8,
-          paddingBottom: Platform.OS === 'android' ? Math.max(insets.bottom, 8) : 8,
-          height: Platform.OS === 'android' ? 88 + Math.max(insets.bottom - 8, 0) : 88,
+          borderBottomWidth: 0,
+          paddingTop: 4,
+          paddingBottom: Platform.OS === 'android' ? Math.max(insets.bottom, 4) : Math.max(insets.bottom, 4),
+          height: Platform.OS === 'android' ? 72 + Math.max(insets.bottom, 0) : 72 + Math.max(insets.bottom, 0),
           shadowColor: "#000",
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.1,
@@ -73,10 +74,10 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: "600",
-          marginTop: 4,
+          marginTop: 2,
         },
         tabBarItemStyle: {
-          paddingTop: 4,
+          paddingTop: 2,
         },
       }}
     >

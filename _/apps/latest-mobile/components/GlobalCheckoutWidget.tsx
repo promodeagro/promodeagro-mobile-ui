@@ -1,14 +1,14 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
-import { ShoppingCart } from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter, usePathname } from "expo-router";
-import { useCart } from "../utils/CartContext";
 import {
-  useFonts,
-  Inter_600SemiBold,
-  Inter_500Medium,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    useFonts,
 } from "@expo-google-fonts/inter";
+import { usePathname, useRouter } from "expo-router";
+import { ShoppingCart } from "lucide-react-native";
+import React from "react";
+import { Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useCart } from "../utils/CartContext";
 
 export default function GlobalCheckoutWidget() {
   const [fontsLoaded] = useFonts({
@@ -21,15 +21,20 @@ export default function GlobalCheckoutWidget() {
   const pathname = usePathname();
   const { totalItems, totalAmount } = useCart();
 
-  // Hide widget on checkout-related screens to avoid confusion
-  const isCheckoutScreen = pathname?.includes('/checkout') || 
-                          pathname?.includes('/cart') ||
-                          pathname?.includes('/address') ||
-                          pathname?.includes('/reorder') || 
-                          pathname?.includes('/order-confirmation') ||
-                          pathname?.includes('/payment');
+  // Only show widget on home and categories pages
+  const allowedPages = [
+    '/(tabs)/home',
+    '/home',
+    '/(tabs)/categories', 
+    '/categories'
+  ];
+  
+  const shouldShowWidget = allowedPages.some(page => pathname?.includes(page)) || 
+                          pathname === '/' || 
+                          pathname === '/home' ||
+                          pathname === '/categories';
 
-  if (!fontsLoaded || totalItems === 0 || isCheckoutScreen) {
+  if (!fontsLoaded || totalItems === 0 || !shouldShowWidget) {
     return null;
   }
 

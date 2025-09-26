@@ -1,15 +1,15 @@
-import React, { useState, useRef, useEffect } from "react";
-import { View, Text, TouchableOpacity, Animated, Platform } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Mail, Phone, Users, Shield } from "lucide-react-native";
 import {
-  useFonts,
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    useFonts,
 } from "@expo-google-fonts/inter";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { Phone, Shield, Users } from "lucide-react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AuthScreen() {
   const [fontsLoaded] = useFonts({
@@ -109,12 +109,12 @@ export default function AuthScreen() {
                 shadowRadius: 16,
               }}
             >
-              <Text style={{ fontSize: 40, color: "#FFFFFF" }}>🌱</Text>
+              <Text style={{ fontSize: 32, color: "#FFFFFF" }}>🌱</Text>
             </View>
 
             <Text
               style={{
-                fontSize: 25,
+                fontSize: 22,
                 fontFamily: "Inter_600SemiBold",
                 color: "#333333",
                 textAlign: "center",
@@ -126,11 +126,11 @@ export default function AuthScreen() {
 
             <Text
               style={{
-                fontSize: 17,
+                fontSize: 15,
                 fontFamily: "Inter_400Regular",
                 color: "#6B7280",
                 textAlign: "center",
-                lineHeight: 26,
+                lineHeight: 22,
                 paddingHorizontal: 20,
               }}
             >
@@ -170,7 +170,7 @@ export default function AuthScreen() {
                 </View>
                 <Text
                   style={{
-                    fontSize: 16,
+                    fontSize: 15,
                     fontFamily: "Inter_500Medium",
                     color: "#333333",
                     flex: 1,
@@ -183,14 +183,14 @@ export default function AuthScreen() {
           </View>
 
           {/* Action Buttons */}
-          <View style={{ marginTop: "auto", marginBottom: 40 }}>
+          <View style={{ marginTop: "auto" }}>
                          <Animated.View style={{ transform: [{ scale: scaleAnimation }] }}>
                <TouchableOpacity
                  onPress={handleSignIn}
                  style={{
                    backgroundColor: "#2E7D32",
                    borderRadius: 16,
-                   paddingVertical: 18,
+                   paddingVertical: 14,
                    alignItems: "center",
                    marginBottom: 16,
                    elevation: 4,
@@ -202,7 +202,7 @@ export default function AuthScreen() {
                >
                  <Text
                    style={{
-                     fontSize: 18,
+                     fontSize: 16,
                      fontFamily: "Inter_600SemiBold",
                      color: "#FFFFFF",
                    }}
@@ -219,16 +219,16 @@ export default function AuthScreen() {
                  style={{
                    backgroundColor: "#F3F4F6",
                    borderRadius: 16,
-                   paddingVertical: 18,
+                   paddingVertical: 14,
                    alignItems: "center",
-                   marginBottom: 16,
+                   marginBottom: 20,
                    borderWidth: 1,
                    borderColor: "#E5E7EB",
                  }}
                >
                  <Text
                    style={{
-                     fontSize: 18,
+                     fontSize: 16,
                      fontFamily: "Inter_600SemiBold",
                      color: "#6B7280",
                    }}
@@ -261,20 +261,21 @@ export default function AuthScreen() {
               </Text>
             </TouchableOpacity> */}
 
-                         {/* Info Text */}
-             <Text
-               style={{
-                 fontSize: 14,
-                 fontFamily: "Inter_400Regular",
-                 color: "#9CA3AF",
-                 textAlign: "center",
-                 marginTop: 24,
-                 lineHeight: 20,
-               }}
-             >
-               By continuing, you agree to our Terms of Service and Privacy Policy.
-               You can browse as a guest or sign in for full access.
-             </Text>
+            {/* Info Text */}
+            <Text
+              style={{
+                fontSize: 13,
+                fontFamily: "Inter_400Regular",
+                color: "#9CA3AF",
+                textAlign: "center",
+                lineHeight: 18,
+                paddingHorizontal: 16,
+                marginBottom: Math.max(insets.bottom + 16, 24),
+              }}
+            >
+              By continuing, you agree to our Terms of Service and Privacy Policy.
+              You can browse as a guest or sign in for full access.
+            </Text>
           </View>
         </Animated.View>
       </View>

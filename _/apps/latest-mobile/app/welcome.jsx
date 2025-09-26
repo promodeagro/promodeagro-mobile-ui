@@ -1,21 +1,21 @@
-import React, { useState, useRef } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Animated,
-  Dimensions,
-} from "react-native";
-import { Image } from "expo-image";
-import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
-import { ChevronRight } from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  useFonts,
-  Inter_400Regular,
-  Inter_600SemiBold,
+    Inter_400Regular,
+    Inter_600SemiBold,
+    useFonts,
 } from "@expo-google-fonts/inter";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { ChevronRight } from "lucide-react-native";
+import React, { useRef, useState } from "react";
+import {
+    Animated,
+    Dimensions,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
@@ -139,7 +139,7 @@ export default function WelcomeScreen() {
         >
           <Text
             style={{
-              fontSize: 14,
+              fontSize: 13,
               fontFamily: "Inter_600SemiBold",
               color: "#FFFFFF",
             }}
@@ -163,12 +163,12 @@ export default function WelcomeScreen() {
         >
           <Text
             style={{
-              fontSize: 32,
+              fontSize: 26,
               fontFamily: "Inter_600SemiBold",
               color: "#FFFFFF",
               textAlign: "center",
               marginBottom: 16,
-              lineHeight: 40,
+              lineHeight: 32,
             }}
           >
             {currentSlide.title}
@@ -176,12 +176,12 @@ export default function WelcomeScreen() {
 
           <Text
             style={{
-              fontSize: 16,
+              fontSize: 15,
               fontFamily: "Inter_400Regular",
               color: "#FFFFFF",
               textAlign: "center",
               marginBottom: 40,
-              lineHeight: 24,
+              lineHeight: 22,
               opacity: 0.9,
             }}
           >
@@ -233,7 +233,7 @@ export default function WelcomeScreen() {
           >
             <Text
               style={{
-                fontSize: 16,
+                fontSize: 15,
                 fontFamily: "Inter_600SemiBold",
                 color: "#2E7D32",
                 marginRight: 8,

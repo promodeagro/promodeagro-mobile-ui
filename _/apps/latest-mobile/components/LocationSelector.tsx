@@ -14,6 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
+    Linking,
     Modal,
     ScrollView,
     Text,
@@ -54,6 +55,19 @@ const LocationSelector = ({
   // Mock data for nearby locations
   const mockLocationData = {
     nearby_stores: [
+      {
+        id: 3,
+        name: "Promode agro farms",
+        distance: "2.1 km",
+        rating: 4.8,
+        delivery_time: "60-90 min",
+        min_order: 200,
+        delivery_fee: 40,
+        is_open: true,
+        address: "Agricultural Farm Area",
+        coordinates: { lat: 12.9716, lng: 77.5946 },
+        mapsLink: "https://maps.app.goo.gl/rjnR1QJ4aouErpbd8",
+      },
       {
         id: 1,
         name: "Fresh Mart",
@@ -113,7 +127,23 @@ const LocationSelector = ({
     ],
   };
 
-  const handleLocationSelect = (location) => {
+  const handleLocationSelect = async (location) => {
+    // Special handling for Promode agro farms - open Google Maps link
+    if (location.name === "Promode agro farms" && location.mapsLink) {
+      try {
+        const supported = await Linking.canOpenURL(location.mapsLink);
+        if (supported) {
+          await Linking.openURL(location.mapsLink);
+        } else {
+          console.log("Cannot open Google Maps link");
+        }
+      } catch (error) {
+        console.log("Error opening Google Maps link:", error);
+      }
+      onClose();
+      return;
+    }
+
     // Store selected address in Redux for use throughout the app
     if (location.type === "address") {
       dispatch(setSelectedAddress(location));

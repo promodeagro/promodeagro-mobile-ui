@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert } from "react-native";
+import { Alert, Linking } from "react-native";
 import { useDispatch, useSelector } from 'react-redux';
 import { apiService } from "../config/api";
 import { setSelectedAddress } from "../store/Address/AddressSlice";
@@ -328,6 +328,143 @@ export function useCheckout() {
         console.error('Error placing order:', error);
         console.error('Error details:', error.message);
         Alert.alert("Error", `Failed to place order: ${error.message}`);
+      } finally {
+        setIsPlacingOrder(false);
+      }
+    },
+    mutatePrepared: async () => {
+      console.log("=== PREPARED ORDER PLACEMENT DEBUG ===");
+      console.log("selectedAddress:", selectedAddress);
+      console.log("selectedDeliverySlot:", selectedDeliverySlot);
+      console.log("selectedPaymentMethod:", selectedPaymentMethod);
+      console.log("cartData:", cartData);
+      console.log("cartData?.items:", cartData?.items);
+      
+      if (!selectedAddress) {
+        console.log("ERROR: No address selected");
+        Alert.alert("Error", "Please select a delivery address");
+        return;
+      }
+      if (!selectedDeliverySlot) {
+        console.log("ERROR: No delivery slot selected");
+        Alert.alert("Error", "Please select a delivery slot");
+        return;
+      }
+      if (!cartData?.items || cartData.items.length === 0) {
+        console.log("ERROR: Cart is empty");
+        Alert.alert("Error", "Your cart is empty");
+        return;
+      }
+
+      try {
+        setIsPlacingOrder(true);
+        
+        // Prepare order payload with real user ID - using "prepared" instead of "cash"
+        const orderPayload = {
+          addressId: selectedAddress?.id || "66d22b07-89e9-4bd8-bfec-d6d7bf936a0a", // Use selected address or fallback
+          deliverySlotId: selectedDeliverySlot?.slotData?.id || "c7e8d862", // Use selected slot or fallback
+          items: cartData.items.map(item => ({
+            productId: item.ProductId,
+            quantity: item.Quantity,
+            quantityUnits: item.QuantityUnits
+          })),
+          paymentDetails: {
+            method: selectedPaymentMethod === "cod" ? "prepared" : selectedPaymentMethod
+          },
+          userId: userId // Using real authenticated user ID
+        };
+
+        console.log("Prepared Order payload:", JSON.stringify(orderPayload, null, 2));
+
+        // Call the order placement API
+        console.log("Calling API for prepared order...");
+        const orderResponse = await apiService.placeOrder(orderPayload);
+        console.log("API Response:", orderResponse);
+        
+        // Check if payment link is provided in the response
+        if (orderResponse.paymentLink) {
+          console.log("Payment link received:", orderResponse.paymentLink);
+          
+          // Open the payment link
+          try {
+            const supported = await Linking.canOpenURL(orderResponse.paymentLink);
+            if (supported) {
+              console.log("Opening payment link...");
+              await Linking.openURL(orderResponse.paymentLink);
+              console.log("Payment link opened successfully");
+              
+              Alert.alert(
+                "Payment Required", 
+                "Please complete the payment in the opened browser. Your order will be confirmed after successful payment.",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      // Clear cart after opening payment link
+                      console.log("Clearing cart after opening payment link...");
+                      clearCart();
+                    }
+                  }
+                ]
+              );
+            } else {
+              console.log("Cannot open payment link");
+              Alert.alert("Error", "Cannot open payment link. Please try again.");
+            }
+          } catch (error) {
+            console.error("Error opening payment link:", error);
+            Alert.alert("Error", `Failed to open payment link: ${error.message}`);
+          }
+        } else {
+          // Fallback to regular order processing if no payment link
+          console.log("No payment link received, processing as regular order");
+          
+          // Extract orderId from the API response
+          const orderId = orderResponse.orderId;
+          console.log("Extracted orderId:", orderId);
+          
+          if (!orderId) {
+            throw new Error("Order ID not received from server");
+          }
+          
+          // Clear cart after successful order placement
+          console.log("Prepared order placed successfully, clearing cart...");
+          clearCart();
+          
+          console.log("=== NAVIGATION DEBUG ===");
+          console.log("orderId for navigation:", orderId);
+          console.log("Navigation route:", `/order-confirmation/${orderId}`);
+          console.log("router object:", router);
+          
+          // Try direct navigation first
+          try {
+            console.log("Attempting direct navigation...");
+            router.replace(`/order-confirmation/${orderId}`);
+            console.log("Direct navigation command executed successfully");
+          } catch (navError) {
+            console.error("Direct navigation error:", navError);
+          }
+          
+          Alert.alert("Success", "Prepared order placed successfully!", [
+            {
+              text: "OK",
+              onPress: () => {
+                // Fallback navigation in case direct navigation didn't work
+                console.log("Alert OK pressed - attempting fallback navigation");
+                try {
+                  router.push(`/order-confirmation/${orderId}`);
+                  console.log("Fallback navigation executed");
+                } catch (navError) {
+                  console.error("Fallback navigation error:", navError);
+                }
+              }
+            }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error placing prepared order:', error);
+        console.error('Error details:', error.message);
+        Alert.alert("Error", `Failed to place prepared order: ${error.message}`);
       } finally {
         setIsPlacingOrder(false);
       }

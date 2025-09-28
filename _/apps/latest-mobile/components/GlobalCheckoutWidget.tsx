@@ -26,7 +26,8 @@ export default function GlobalCheckoutWidget() {
     '/(tabs)/home',
     '/home',
     '/(tabs)/categories', 
-    '/categories'
+    '/categories',
+    '/category'
   ];
   
   const shouldShowWidget = allowedPages.some(page => pathname?.includes(page)) || 

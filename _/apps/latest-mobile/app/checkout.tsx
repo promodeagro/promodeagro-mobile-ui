@@ -139,6 +139,8 @@ export default function CheckoutScreen() {
         onPlaceOrder={placeOrderMutation.mutate}
         isPlacingOrder={placeOrderMutation.isPending}
         total={total}
+        selectedPaymentMethod={selectedPaymentMethod}
+        onPlacePreparedOrder={placeOrderMutation.mutatePrepared}
         disabled={(() => {
           const isDisabled = !selectedAddress || !selectedDeliverySlot || !selectedPaymentMethod;
           console.log("=== BUTTON DISABLED CHECK ===");

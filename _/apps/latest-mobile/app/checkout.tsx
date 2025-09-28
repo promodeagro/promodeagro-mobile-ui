@@ -53,6 +53,8 @@ export default function CheckoutScreen() {
     setSelectedDeliverySlot,
     selectedPaymentMethod,
     setSelectedPaymentMethod,
+    selectedSubOption,
+    setSelectedSubOption,
     couponCode,
     setCouponCode,
     appliedCoupon,
@@ -113,6 +115,8 @@ export default function CheckoutScreen() {
         <PaymentMethodSection
           selectedPaymentMethod={selectedPaymentMethod}
           onSelectPaymentMethod={setSelectedPaymentMethod}
+          selectedSubOption={selectedSubOption}
+          onSelectSubOption={setSelectedSubOption}
         />
         <CouponSection
           appliedCoupon={appliedCoupon}
@@ -139,14 +143,13 @@ export default function CheckoutScreen() {
         onPlaceOrder={placeOrderMutation.mutate}
         isPlacingOrder={placeOrderMutation.isPending}
         total={total}
-        selectedPaymentMethod={selectedPaymentMethod}
-        onPlacePreparedOrder={placeOrderMutation.mutatePrepared}
         disabled={(() => {
-          const isDisabled = !selectedAddress || !selectedDeliverySlot || !selectedPaymentMethod;
+          const isDisabled = !selectedAddress || !selectedDeliverySlot || !selectedPaymentMethod || (selectedPaymentMethod === "cod" && !selectedSubOption);
           console.log("=== BUTTON DISABLED CHECK ===");
           console.log("selectedAddress:", !!selectedAddress);
           console.log("selectedDeliverySlot:", !!selectedDeliverySlot);
           console.log("selectedPaymentMethod:", !!selectedPaymentMethod);
+          console.log("selectedSubOption:", selectedSubOption);
           console.log("isDisabled:", isDisabled);
           return isDisabled;
         })()}

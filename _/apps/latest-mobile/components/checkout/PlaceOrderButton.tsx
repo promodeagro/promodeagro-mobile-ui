@@ -11,16 +11,12 @@ export function PlaceOrderButton({
   onPlaceOrder, 
   isPlacingOrder, 
   total, 
-  disabled,
-  selectedPaymentMethod,
-  onPlacePreparedOrder
+  disabled 
 }: {
   onPlaceOrder: () => void;
   isPlacingOrder: boolean;
   total: number;
   disabled: boolean;
-  selectedPaymentMethod?: string;
-  onPlacePreparedOrder?: () => void;
 }) {
   const insets = useSafeAreaInsets();
 
@@ -53,84 +49,30 @@ export function PlaceOrderButton({
         borderTopColor: "#F3F4F6",
       }}
     >
-      {selectedPaymentMethod === "cod" ? (
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          {/* Place Order Button (Cash) */}
-          <TouchableOpacity
-            onPress={handlePress}
-            disabled={disabled}
+      <TouchableOpacity
+        onPress={handlePress}
+        disabled={disabled}
+        style={{
+          backgroundColor: !disabled ? "#8B5CF6" : "#E5E7EB",
+          borderRadius: 16,
+          paddingVertical: 16,
+          alignItems: "center",
+        }}
+      >
+        {isPlacingOrder ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <Text
             style={{
-              flex: 1,
-              backgroundColor: !disabled ? "#8B5CF6" : "#E5E7EB",
-              borderRadius: 16,
-              paddingVertical: 16,
-              alignItems: "center",
+              fontSize: 16,
+              fontFamily: "Inter_600SemiBold",
+              color: !disabled ? "#FFFFFF" : "#9CA3AF",
             }}
           >
-            {isPlacingOrder ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontFamily: "Inter_600SemiBold",
-                  color: !disabled ? "#FFFFFF" : "#9CA3AF",
-                }}
-              >
-                Place Order • ₹{(total || 0).toFixed(0)}
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          {/* Prepared Order Button */}
-          <TouchableOpacity
-            onPress={onPlacePreparedOrder}
-            disabled={disabled || isPlacingOrder}
-            style={{
-              flex: 1,
-              backgroundColor: !disabled ? "#10B981" : "#E5E7EB",
-              borderRadius: 16,
-              paddingVertical: 16,
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontFamily: "Inter_600SemiBold",
-                color: !disabled ? "#FFFFFF" : "#9CA3AF",
-              }}
-            >
-              Prepared Order
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <TouchableOpacity
-          onPress={handlePress}
-          disabled={disabled}
-          style={{
-            backgroundColor: !disabled ? "#8B5CF6" : "#E5E7EB",
-            borderRadius: 16,
-            paddingVertical: 16,
-            alignItems: "center",
-          }}
-        >
-          {isPlacingOrder ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text
-              style={{
-                fontSize: 16,
-                fontFamily: "Inter_600SemiBold",
-                color: !disabled ? "#FFFFFF" : "#9CA3AF",
-              }}
-            >
-              Place Order • ₹{(total || 0).toFixed(0)}
-            </Text>
-          )}
-        </TouchableOpacity>
-      )}
+            Place Order • ₹{(total || 0).toFixed(0)}
+          </Text>
+        )}
+      </TouchableOpacity>
     </View>
   );
 }

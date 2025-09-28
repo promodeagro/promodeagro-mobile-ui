@@ -1,6 +1,6 @@
+import { Check, CreditCard, Star } from "lucide-react-native";
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
-import { CreditCard, Plus, Check, Edit3, Star } from "lucide-react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { PaymentOption } from "./PaymentOption";
 
 const paymentOptions = {
@@ -130,6 +130,18 @@ const paymentOptions = {
           <Text style={{ fontSize: 18 }}>💰</Text>
         </View>
       ),
+      subOptions: [
+        {
+          id: "cod-cash",
+          title: "Cash on Delivery",
+          subtitle: "Pay with cash when order arrives",
+        },
+        {
+          id: "cod-prepared",
+          title: "Prepared Order",
+          subtitle: "Pay online before delivery",
+        },
+      ],
     },
   ],
 };
@@ -137,9 +149,13 @@ const paymentOptions = {
 export function PaymentMethodSection({
   selectedPaymentMethod,
   onSelectPaymentMethod,
+  selectedSubOption,
+  onSelectSubOption,
 }: {
   selectedPaymentMethod: string;
   onSelectPaymentMethod: (method: string) => void;
+  selectedSubOption?: string;
+  onSelectSubOption?: (subOption: string) => void;
 }) {
   const [showSavedMethods, setShowSavedMethods] = useState(true);
 
@@ -422,6 +438,8 @@ export function PaymentMethodSection({
             {...option}
             isSelected={selectedPaymentMethod === option.id}
             onSelect={onSelectPaymentMethod}
+            selectedSubOption={selectedSubOption}
+            onSelectSubOption={onSelectSubOption}
           />
         ))}
       </View>

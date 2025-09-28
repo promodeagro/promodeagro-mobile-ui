@@ -222,36 +222,38 @@ export function FlashDealsSection({ deals }: { deals: any[] }) {
                     }}
                     numberOfLines={2}
                   >
-                    {deal.name}
+                    {deal.name && deal.name.length > 20 ? `${deal.name.substring(0, 20)}...` : deal.name}
                   </Text>
 
                   {/* Variation Selector */}
-                  {deal.variations && deal.variations.length > 1 && (
+                  {deal.variations && deal.variations.length > 0 && (
                     <TouchableOpacity
-                      onPress={() => openVariationModal(deal)}
+                      onPress={() => deal.variations.length > 1 ? openVariationModal(deal) : null}
+                      disabled={deal.variations.length === 1}
                       style={{
                         flexDirection: "row",
                         alignItems: "center",
-                        backgroundColor: "#F8FAFC",
+                        backgroundColor: deal.variations.length === 1 ? "#F3F4F6" : "#F8FAFC",
                         paddingHorizontal: 8,
                         paddingVertical: 6,
                         borderRadius: 6,
                         borderWidth: 1,
-                        borderColor: "#E2E8F0",
+                        borderColor: deal.variations.length === 1 ? "#D1D5DB" : "#E2E8F0",
                         marginBottom: 8,
+                        opacity: deal.variations.length === 1 ? 0.7 : 1,
                       }}
                     >
                       <Text
                         style={{
                           fontSize: 12,
                           fontFamily: "Inter_600SemiBold",
-                          color: "#1F2937",
+                          color: deal.variations.length === 1 ? "#6B7280" : "#1F2937",
                           flex: 1,
                         }}
                       >
                         {currentVariation.name}
                       </Text>
-                      <ChevronDown size={12} color="#6B7280" />
+                      {deal.variations.length > 1 && <ChevronDown size={12} color="#6B7280" />}
                     </TouchableOpacity>
                   )}
 

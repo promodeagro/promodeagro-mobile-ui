@@ -256,36 +256,38 @@ export function CategoryProductsSection({ categoryData }: { categoryData: Catego
                       }}
                       numberOfLines={2}
                     >
-                      {item.name}
+                      {item.name && item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name}
                     </Text>
 
                     {/* Variation Selector */}
-                    {item.variations && item.variations.length > 1 && (
+                    {item.variations && item.variations.length > 0 && (
                       <TouchableOpacity
-                        onPress={() => openVariationModal(item)}
+                        onPress={() => item.variations.length > 1 ? openVariationModal(item) : null}
+                        disabled={item.variations.length === 1}
                         style={{
                           flexDirection: "row",
                           alignItems: "center",
-                          backgroundColor: "#F8FAFC",
+                          backgroundColor: item.variations.length === 1 ? "#F3F4F6" : "#F8FAFC",
                           paddingHorizontal: 8,
                           paddingVertical: 6,
                           borderRadius: 6,
                           borderWidth: 1,
-                          borderColor: "#E2E8F0",
+                          borderColor: item.variations.length === 1 ? "#D1D5DB" : "#E2E8F0",
                           marginBottom: 8,
+                          opacity: item.variations.length === 1 ? 0.7 : 1,
                         }}
                       >
                         <Text
                           style={{
                             fontSize: 12,
                             fontFamily: "Inter_600SemiBold",
-                            color: "#1F2937",
+                            color: item.variations.length === 1 ? "#6B7280" : "#1F2937",
                             flex: 1,
                           }}
                         >
                           {currentVariation.unit || currentVariation.name}
                         </Text>
-                        <ChevronDown size={12} color="#6B7280" />
+                        {item.variations.length > 1 && <ChevronDown size={12} color="#6B7280" />}
                       </TouchableOpacity>
                     )}
 

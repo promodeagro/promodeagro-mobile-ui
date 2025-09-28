@@ -1,7 +1,7 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { MapPin, Plus } from "lucide-react-native";
+import { ChevronDown, MapPin, Plus } from "lucide-react-native";
+import React, { useState } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 import { AddressCard } from "./AddressCard";
 
 export function AddressSection({ addresses, selectedAddress, onSelectAddress }: { 
@@ -10,6 +10,7 @@ export function AddressSection({ addresses, selectedAddress, onSelectAddress }: 
   onSelectAddress: (address: any) => void 
 }) {
   const router = useRouter();
+  const [showAllAddresses, setShowAllAddresses] = useState(false);
 
   return (
     <View style={{ backgroundColor: "#FFFFFF", marginTop: 8, padding: 20 }}>
@@ -40,14 +41,51 @@ export function AddressSection({ addresses, selectedAddress, onSelectAddress }: 
       </View>
 
       {addresses && addresses.length > 0 ? (
-        addresses.map((address) => (
-          <AddressCard
-            key={address.id}
-            address={address}
-            isSelected={selectedAddress?.id === address.id}
-            onSelect={() => onSelectAddress(address)}
-          />
-        ))
+        <>
+          {(showAllAddresses ? addresses : addresses.slice(0, 3)).map((address) => (
+            <AddressCard
+              key={address.id}
+              address={address}
+              isSelected={selectedAddress?.id === address.id}
+              onSelect={() => onSelectAddress(address)}
+            />
+          ))}
+          
+          {addresses.length > 3 && (
+            <TouchableOpacity
+              onPress={() => setShowAllAddresses(!showAllAddresses)}
+              style={{
+                backgroundColor: "#F8F9FA",
+                borderRadius: 12,
+                padding: 16,
+                marginTop: 8,
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: "Inter_600SemiBold",
+                  color: "#8B5CF6",
+                  marginRight: 8,
+                }}
+              >
+                {showAllAddresses ? "Show Less" : `View All (${addresses.length - 3} more)`}
+              </Text>
+              <ChevronDown 
+                size={16} 
+                color="#8B5CF6" 
+                style={{ 
+                  transform: [{ rotate: showAllAddresses ? "180deg" : "0deg" }] 
+                }} 
+              />
+            </TouchableOpacity>
+          )}
+        </>
       ) : (
         <TouchableOpacity
           onPress={() => router.push("/(tabs)/address/new")}

@@ -26,16 +26,28 @@ export function AddressCard({ address, isSelected, onSelect }: {
     >
       <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
         <View style={{ flex: 1, marginRight: 12 }}>
-          <Text
-            style={{
-              fontSize: 16,
-              fontFamily: "Inter_600SemiBold",
-              color: isSelected ? "#8B5CF6" : "#111827",
-              marginBottom: 4,
-            }}
-          >
-            {address.name}
-          </Text>
+          {address.address_type && (
+            <View
+              style={{
+                backgroundColor: "#8B5CF6",
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                borderRadius: 12,
+                alignSelf: "flex-start",
+                marginBottom: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontFamily: "Inter_600SemiBold",
+                  color: "#FFFFFF",
+                }}
+              >
+                {address.address_type}
+              </Text>
+            </View>
+          )}
           {address.phone && (
             <Text
               style={{
@@ -54,35 +66,23 @@ export function AddressCard({ address, isSelected, onSelect }: {
               fontFamily: "Inter_400Regular",
               color: "#6B7280",
               lineHeight: 20,
+              marginBottom: 8,
             }}
           >
             {address.address}
+            {address.house_number && `, ${address.house_number}`}
+            {address.zipCode && `, ${address.zipCode}`}
             {address.landmark && `\n${address.landmark}`}
-            {"\n"}
-            {address.zipCode}
           </Text>
-          {address.address_type && (
-            <View
-              style={{
-                backgroundColor: "#8B5CF6",
-                paddingHorizontal: 8,
-                paddingVertical: 2,
-                borderRadius: 12,
-                alignSelf: "flex-start",
-                marginTop: 8,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontFamily: "Inter_600SemiBold",
-                  color: "#FFFFFF",
-                }}
-              >
-                {address.address_type}
-              </Text>
-            </View>
-          )}
+          <Text
+            style={{
+              fontSize: 14,
+              fontFamily: "Inter_600SemiBold",
+              color: isSelected ? "#8B5CF6" : "#111827",
+            }}
+          >
+            {address.name}
+          </Text>
         </View>
         {isSelected && <CheckCircle size={20} color="#8B5CF6" />}
       </View>

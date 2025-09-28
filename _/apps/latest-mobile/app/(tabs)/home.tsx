@@ -317,10 +317,23 @@ export default function HomeScreen() {
   // Format the address for display
   // Priority: selectedAddress > defaultAddress > userLocation > "Add Address"
   const addressType = selectedAddress?.address_type || defaultAddress?.address_type || null;
+  
+  // Helper function to format address properly
+  const formatAddress = (address) => {
+    if (!address) return null;
+    
+    const parts = [];
+    if (address.house_number) parts.push(address.house_number);
+    if (address.address) parts.push(address.address);
+    if (address.landmark_area) parts.push(address.landmark_area);
+    
+    return parts.length > 0 ? parts.join(', ') : null;
+  };
+  
   const fullAddress = selectedAddress ? 
-    `${selectedAddress.house_number || ''}, ${selectedAddress.address || ''}${selectedAddress.landmark_area ? ', ' + selectedAddress.landmark_area : ''}` : 
+    formatAddress(selectedAddress) : 
     defaultAddress ? 
-    `${defaultAddress.house_number || ''}, ${defaultAddress.address || ''}${defaultAddress.landmark_area ? ', ' + defaultAddress.landmark_area : ''}` : 
+    formatAddress(defaultAddress) : 
     null;
     
   // Better fallback logic for display location
@@ -332,7 +345,7 @@ export default function HomeScreen() {
   } else if (userLocation && userLocation !== "Current Location" && !userLocation.includes("undefined")) {
     displayLocation = userLocation;
   } else if (isAuthenticated) {
-    displayLocation = "Add your address";
+    displayLocation = "Select Address";
   } else {
     displayLocation = "Select location to order";
   }

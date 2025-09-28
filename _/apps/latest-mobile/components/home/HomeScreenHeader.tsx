@@ -223,15 +223,15 @@ export function HomeScreenHeader({
                   alignItems: "center",
                   marginBottom: 4,
                   flex: 1,
-                  backgroundColor: userLocation.includes("Add") || userLocation.includes("Select") ? "#FEF3C7" : "transparent",
-                  paddingHorizontal: userLocation.includes("Add") || userLocation.includes("Select") ? 12 : 0,
-                  paddingVertical: userLocation.includes("Add") || userLocation.includes("Select") ? 8 : 0,
-                  borderRadius: userLocation.includes("Add") || userLocation.includes("Select") ? 12 : 0,
-                  borderWidth: userLocation.includes("Add") || userLocation.includes("Select") ? 1 : 0,
-                  borderColor: userLocation.includes("Add") || userLocation.includes("Select") ? "#F59E0B" : "transparent",
+                  backgroundColor: userLocation.includes("Add") ? "#FEF3C7" : "transparent",
+                  paddingHorizontal: userLocation.includes("Add") ? 12 : 0,
+                  paddingVertical: userLocation.includes("Add") ? 8 : 0,
+                  borderRadius: userLocation.includes("Add") ? 12 : 0,
+                  borderWidth: userLocation.includes("Add") ? 1 : 0,
+                  borderColor: userLocation.includes("Add") ? "#F59E0B" : "transparent",
                 }}
               >
-                {userLocation.includes("Add") || userLocation.includes("Select") ? (
+                {userLocation.includes("Add") ? (
                   <>
                     <MapPin size={16} color="#F59E0B" style={{ marginRight: 8 }} />
                     <Text

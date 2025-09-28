@@ -301,7 +301,7 @@ export default function ProductCard({
             }}
             numberOfLines={2}
           >
-            {product.name}
+            {product.name && product.name.length > 22 ? `${product.name.substring(0, 22)}...` : product.name}
           </Text>
 
           {/* Variation Selector */}

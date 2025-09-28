@@ -126,7 +126,7 @@ export default function CategoryScreen() {
     price: product.variations?.[0]?.price || 0,
     originalPrice: product.variations?.[0]?.mrp || product.variations?.[0]?.price || 0,
     unit: product.variations?.[0]?.unit || "1 unit",
-    brand: "Promode Agro",
+    brand: "Promode agro farms",
     image: product.image,
     rating: 4.5,
     reviews: Math.floor(Math.random() * 100) + 10,

@@ -47,14 +47,6 @@ export default function RootLayout() {
                 <Stack.Screen name="profile-setup" options={{ headerShown: false }} />
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen 
-                  name="category" 
-                  options={{ 
-                    headerShown: false,
-                    header: () => null,
-                    presentation: 'modal'
-                  }} 
-                />
-                <Stack.Screen 
                   name="checkout" 
                   options={{ 
                     headerShown: false,
@@ -105,20 +97,6 @@ export default function RootLayout() {
                 />
                 <Stack.Screen 
                   name="referral" 
-                  options={{ 
-                    headerShown: false,
-                    header: () => null,
-                  }} 
-                />
-                <Stack.Screen 
-                  name="payment" 
-                  options={{ 
-                    headerShown: false,
-                    header: () => null,
-                  }} 
-                />
-                <Stack.Screen 
-                  name="address" 
                   options={{ 
                     headerShown: false,
                     header: () => null,

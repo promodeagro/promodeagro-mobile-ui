@@ -11,12 +11,14 @@ export function PlaceOrderButton({
   onPlaceOrder, 
   isPlacingOrder, 
   total, 
-  disabled 
+  disabled, 
+  label = "Click to Pay" 
 }: {
   onPlaceOrder: () => void;
   isPlacingOrder: boolean;
   total: number;
   disabled: boolean;
+  label?: string;
 }) {
   const insets = useSafeAreaInsets();
 
@@ -69,7 +71,7 @@ export function PlaceOrderButton({
               color: !disabled ? "#FFFFFF" : "#9CA3AF",
             }}
           >
-            Place Order • ₹{(total || 0).toFixed(0)}
+            {label} • ₹{(total || 0).toFixed(0)}
           </Text>
         )}
       </TouchableOpacity>

@@ -46,7 +46,7 @@ export default function WishlistScreen() {
   const [selectedPriority, setSelectedPriority] = useState('all'); // 'all', 'high', 'normal'
 
   // Mock data for demonstration
-  const [wishlistItems] = useState([
+  const [wishlistItems, setWishlistItems] = useState([
     {
       id: 1,
       favorite_id: 1,
@@ -188,8 +188,10 @@ export default function WishlistScreen() {
           text: 'Remove',
           style: 'destructive',
           onPress: () => {
-            // Handle remove from wishlist
+            // Optimistically remove from local state
             console.log('Remove from wishlist:', productId);
+            setWishlistItems(prev => prev.filter(it => it.id !== productId));
+            // TODO: call backend to remove favorite using favorite_id if available
           },
         },
       ]

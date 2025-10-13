@@ -34,7 +34,7 @@ export function AddressSection({ addresses, selectedAddress, onSelectAddress }: 
         </Text>
         <TouchableOpacity
           style={{ marginLeft: "auto" }}
-          onPress={() => router.push("/(tabs)/address/new")}
+          onPress={() => router.push("/address/new")}
         >
           <Plus size={20} color="#8B5CF6" />
         </TouchableOpacity>
@@ -88,7 +88,7 @@ export function AddressSection({ addresses, selectedAddress, onSelectAddress }: 
         </>
       ) : (
         <TouchableOpacity
-          onPress={() => router.push("/(tabs)/address/new")}
+          onPress={() => router.push("/address/new")}
           style={{
             backgroundColor: "#F8F9FA",
             borderRadius: 12,

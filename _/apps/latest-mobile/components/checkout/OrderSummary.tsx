@@ -33,6 +33,13 @@ export function OrderSummary({
     return `${weight}g`;
   };
 
+  // Normalize cart items to avoid stray strings/numbers causing RN <Text> error
+  const normalizedItems = Array.isArray(cartItems)
+    ? cartItems.filter((it) => it && typeof it === "object")
+    : [];
+  // Unique products count should match visible rows
+  const uniqueProducts = normalizedItems.length;
+
   return (
     <View style={{ backgroundColor: "#FFFFFF", marginTop: 8, padding: 20 }}>
       <View
@@ -61,16 +68,13 @@ export function OrderSummary({
             marginLeft: 8,
           }}
         >
-          ({cartItems?.length || 0} items)
+          ({uniqueProducts} items)
         </Text>
       </View>
 
-      {/* Cart Items */}
-      <ScrollView
-        style={{ maxHeight: 200 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {cartItems?.map((item, index) => (
+      {/* Cart Items (show all without scroll clipping) */}
+      <View>
+        {normalizedItems.map((item, index) => (
           <View
             key={item.id || `item-${index}`}
             style={{
@@ -78,7 +82,7 @@ export function OrderSummary({
               alignItems: "center",
               paddingVertical: 12,
               borderBottomWidth:
-                cartItems.length > 1 && index < cartItems.length - 1 ? 1 : 0,
+                normalizedItems.length > 1 && index < normalizedItems.length - 1 ? 1 : 0,
               borderBottomColor: "#F3F4F6",
             }}
           >
@@ -136,8 +140,7 @@ export function OrderSummary({
                     marginBottom: 4,
                   }}
                 >
-                  {item.variation.name}
-                  {item.product?.category && ` • ${item.product.category}`}
+                  {`${item.variation?.name ?? ""}${item.product?.category ? ` • ${String(item.product.category)}` : ""}`}
                 </Text>
               )}
 
@@ -157,8 +160,7 @@ export function OrderSummary({
                         color: "#6B7280",
                       }}
                     >
-                      {formatPrice(item.variation?.price || item.product?.price)} ×{" "}
-                      {item.quantity}
+                      {`${formatPrice(item.variation?.price ?? item.product?.price ?? 0)} × ${item.quantity ?? 1}`}
                     </Text>
                     {item.variation?.mrp && item.variation.mrp > item.variation.price && (
                       <Text
@@ -203,17 +205,10 @@ export function OrderSummary({
             </View>
           </View>
         ))}
-      </ScrollView>
+      </View>
 
-      {/* Price Breakdown */}
-      <View
-        style={{
-          borderTopWidth: 1,
-          borderTopColor: "#F3F4F6",
-          paddingTop: 16,
-          marginTop: 16,
-        }}
-      >
+      {/* Price Breakdown - condensed */}
+      <View style={{ borderTopWidth: 1, borderTopColor: "#F3F4F6", paddingTop: 16, marginTop: 16 }}>
         <View
           style={{
             flexDirection: "row",
@@ -268,63 +263,9 @@ export function OrderSummary({
           </Text>
         </View>
 
-        {savings > 0 && (
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginBottom: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                fontFamily: "Inter_500Medium",
-                color: "#6B7280",
-              }}
-            >
-              Total Savings
-            </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                fontFamily: "Inter_600SemiBold",
-                color: "#10B981",
-              }}
-            >
-              -{formatPrice(savings)}
-            </Text>
-          </View>
-        )}
+        {/* Savings hidden for simpler UI */}
 
-        {discount > 0 && (
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginBottom: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                fontFamily: "Inter_500Medium",
-                color: "#6B7280",
-              }}
-            >
-              Coupon Discount
-            </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                fontFamily: "Inter_600SemiBold",
-                color: "#10B981",
-              }}
-            >
-              -{formatPrice(discount)}
-            </Text>
-          </View>
-        )}
+        {/* Coupon line hidden for simpler UI */}
 
         <View
           style={{
@@ -356,51 +297,9 @@ export function OrderSummary({
           </Text>
         </View>
 
-        {/* Savings Message */}
-        {(discount > 0 || savings > 0) && (
-          <View
-            style={{
-              backgroundColor: "#F0FDF4",
-              borderRadius: 8,
-              padding: 12,
-              marginTop: 12,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 12,
-                fontFamily: "Inter_500Medium",
-                color: "#15803D",
-                textAlign: "center",
-              }}
-            >
-              🎉 You're saving {formatPrice(discount + savings)} on this order!
-            </Text>
-          </View>
-        )}
+        {/* Savings message hidden */}
 
-        {/* Charges Tag Message */}
-        {chargestag && (
-          <View
-            style={{
-              backgroundColor: "#FEF3C7",
-              borderRadius: 8,
-              padding: 12,
-              marginTop: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 12,
-                fontFamily: "Inter_500Medium",
-                color: "#D97706",
-                textAlign: "center",
-              }}
-            >
-              {chargestag}
-            </Text>
-          </View>
-        )}
+        {/* Charges tag hidden */}
       </View>
     </View>
   );

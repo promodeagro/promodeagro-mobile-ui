@@ -21,7 +21,7 @@ import {
     XCircle,
     X as XIcon,
 } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -31,7 +31,11 @@ import {
     TouchableOpacity,
     useColorScheme,
     View,
+    AppState,
 } from "react-native";
+import * as WebBrowser from 'expo-web-browser';
+import * as LinkingExpo from 'expo-linking';
+import { Linking } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from 'react-redux';
 import { CategoryProductsSection } from "../../components/home/CategoryProductsSection";
@@ -75,6 +79,51 @@ export default function OrdersScreen() {
 
   // Get cart functions
   const { addToCart } = useCart();
+  const appStateRef = useRef(AppState.currentState);
+  const pendingOrderIdRef = useRef<string | null>(null);
+
+  // Helpers to normalize server fields
+  const getOrderStatus = (order: any) => (order?.status || order?.order_status || '').toLowerCase();
+  const getPaymentStatus = (order: any) => (order?.payment_status || order?.paymentStatus || '').toLowerCase();
+  const getPaymentMethod = (order: any) => (order?.paymentDetails?.method || order?.payment_method || '').toLowerCase();
+
+  // Canonical stage for filtering UI
+  const getCanonicalStage = (order: any) => {
+    const s = getOrderStatus(order);
+    const p = getPaymentStatus(order);
+    const m = getPaymentMethod(order);
+    // Delivered
+    if (s === 'delivered') return 'delivered';
+    // In transit
+    if (['out_for_delivery', 'out-for-delivery', 'dispatch', 'shipped'].includes(s)) return 'in_transit';
+    // Packed
+    if (['packed', 'ready_to_ship', 'ready-to-ship'].includes(s)) return 'packed';
+    // In process (confirmed/processing)
+    if (['confirmed', 'processing', 'processed', 'in_process', 'in-process'].includes(s)) return 'in_process';
+    // Order placed (pending/created)
+    if (['pending', 'created', 'order_placed', 'placed'].includes(s)) return 'order_placed';
+    // If paid & confirmed, consider in process
+    if ((p === 'completed' || p === 'paid' || p === 'succeeded') && ['confirmed','completed','paid'].includes(s)) return 'in_process';
+    // COD often goes from placed -> confirmed
+    if (m === 'cash' || m === 'cod' || m === 'cod-prepared') {
+      if (s) return s as any;
+      return 'order_placed';
+    }
+    return 'order_placed';
+  };
+
+  // Whether an order should be shown in production list
+  const isOrderDisplayable = (order: any) => {
+    const status = getOrderStatus(order);
+    const pstatus = getPaymentStatus(order);
+    const method = getPaymentMethod(order);
+    // Always show COD orders
+    if (method === 'cash' || method === 'cod' || method === 'cod-prepared') return true;
+    // Show online orders only if paid/confirmed
+    if (['completed', 'confirmed', 'delivered', 'paid'].includes(status)) return true;
+    if (pstatus === 'completed' || pstatus === 'paid' || pstatus === 'succeeded') return true;
+    return false;
+  };
 
   // Get category data from API (same as home page) - Bengali Special, Fresh Fruits, Fresh Vegetables
   const categoryData = homePageProductsData?.data?.filter(
@@ -109,18 +158,20 @@ export default function OrdersScreen() {
       console.log("Orders API response:", response);
       
       if (response.orders && Array.isArray(response.orders)) {
-        setOrders(response.orders);
+        // Filter out unpaid online orders for production visibility
+        const visible = response.orders.filter(isOrderDisplayable);
+        setOrders(visible);
       } else {
         setOrders([]);
       }
     } catch (err) {
-      console.error("Error fetching orders:", err);
-      // Handle 404 as "no orders found" instead of error
-      if (err.message && err.message.includes('404')) {
+      // Treat 404 as empty orders without logging an error
+      if (err?.message && err.message.includes('404')) {
         setError(null);
         setOrders([]);
       } else {
-        setError(err.message || "Failed to fetch orders");
+        console.warn("Orders fetch warning:", err?.message || err);
+        setError(err?.message || "Failed to fetch orders");
         setOrders([]);
       }
     } finally {
@@ -387,33 +438,123 @@ export default function OrdersScreen() {
 // sssss
   
   const getStatusText = (status: string) => {
-    switch (status) {
-      case "delivered":
-        return "Delivered";
-      case "out_for_delivery":
-        return "Out for Delivery";
-      case "packed":
-        return "Packed";
-      case "confirmed":
-        return "Confirmed";
-      case "cancelled":
-        return "Cancelled";
-      case "pending":
-        return "Pending";
-      default:
-        return "Processing";
-    }
+    const s = (status || '').toLowerCase();
+    // Canonical labels required:
+    // order placed, in process, packed, out for delivery, delivered
+    if (s === 'delivered') return 'Delivered';
+    if (s === 'out_for_delivery' || s === 'out-for-delivery' || s === 'dispatch' || s === 'shipped') return 'Out for Delivery';
+    if (s === 'packed' || s === 'ready_to_ship' || s === 'ready-to-ship') return 'Packed';
+    if (s === 'confirmed' || s === 'processing' || s === 'processed' || s === 'in_process' || s === 'in-process') return 'In Process';
+    if (s === 'pending' || s === 'created' || s === 'order_placed' || s === 'placed') return 'Order Placed';
+    if (s === 'cancelled' || s === 'canceled') return 'Cancelled';
+    return 'In Process';
   };
 
   const filteredOrders = orders.filter((order) => {
-    if (activeTab === "all") return true;
-    return order.status === activeTab;
+    if (activeTab === 'all') return true;
+    return getCanonicalStage(order) === activeTab;
   });
 
 
+  const isOrderPaidOrConfirmed = (order: any) => isOrderDisplayable(order);
+
+  const isOnlineAndUnpaid = (order: any) => {
+    const method = getPaymentMethod(order);
+    if (method === 'cash' || method === 'cod' || method === 'cod-prepared') return false;
+    return !isOrderDisplayable(order);
+  };
+
+  const verifyOrderPaid = async (orderId: string) => {
+    try {
+      // Reuse orders API by id via home API service
+      const latest = await apiService.getOrderById(orderId);
+      const status = getOrderStatus(latest);
+      const pstatus = getPaymentStatus(latest);
+      const paid = ['confirmed','completed','paid','delivered'].includes(status) || ['completed','paid','succeeded'].includes(pstatus);
+      return paid;
+    } catch (e: any) {
+      console.warn('Verify order failed:', e?.message || e);
+      return false;
+    }
+  };
+
+  const pollOrderUntilPaid = async (orderId: string, attempts = 6, intervalMs = 4000) => {
+    for (let i = 0; i < attempts; i++) {
+      const ok = await verifyOrderPaid(orderId);
+      if (ok) return true;
+      await new Promise(res => setTimeout(res, intervalMs));
+    }
+    return false;
+  };
+
+  const handlePayNow = async (order: any) => {
+    try {
+      const orderId = String(order.id || order.orderId);
+      const payUrl = order.paymentLink || order.payment_link || order.payment_url;
+      if (!payUrl) {
+        Alert.alert('Payment', 'No payment link available. Please try from Orders later.');
+        return;
+      }
+
+      pendingOrderIdRef.current = orderId;
+
+      const onAppStateChange = async (next: any) => {
+        if (appStateRef.current.match(/inactive|background/) && next === 'active') {
+          const ok = await verifyOrderPaid(orderId);
+          if (ok) {
+            router.push(`/order-confirmation/${orderId}`);
+            pendingOrderIdRef.current = null;
+          } else {
+            // start a short poll window
+            const settled = await pollOrderUntilPaid(orderId, 4, 3000);
+            if (settled) {
+              router.push(`/order-confirmation/${orderId}`);
+              pendingOrderIdRef.current = null;
+            } else {
+              Alert.alert('Payment Pending', 'Payment not confirmed yet.');
+            }
+          }
+        }
+        appStateRef.current = next;
+      };
+      AppState.removeEventListener?.('change', onAppStateChange as any);
+      AppState.addEventListener('change', onAppStateChange as any);
+
+      const isUpi = typeof payUrl === 'string' && payUrl.startsWith('upi://');
+      const isReceipt = typeof payUrl === 'string' && payUrl.includes('/mycart/address/order-placed/');
+      if (isUpi) {
+        await Linking.openURL(payUrl);
+        setTimeout(() => { pollOrderUntilPaid(orderId, 4, 3000); }, 1500);
+      } else if (!isReceipt) {
+        const redirectUrl = LinkingExpo.createURL('payment-callback');
+        await WebBrowser.openAuthSessionAsync(payUrl, redirectUrl);
+        setTimeout(() => { pollOrderUntilPaid(orderId, 4, 3000); }, 1500);
+      } else {
+        // Avoid external receipt; verify in-app instead
+        setTimeout(() => { pollOrderUntilPaid(orderId, 4, 3000); }, 1000);
+      }
+    } catch (e: any) {
+      Alert.alert('Payment', e?.message || 'Failed to start payment.');
+    }
+  };
+
+  const handleViewDetails = (order: any) => {
+    if (isOrderPaidOrConfirmed(order)) {
+      router.push(`/order-confirmation/${order.id}`);
+    } else {
+      Alert.alert(
+        'Payment Pending',
+        'This order is not paid yet. Complete the payment to view confirmation.',
+        [
+          { text: 'OK' }
+        ]
+      );
+    }
+  };
+
   const OrderCard = ({ order }: { order: any }) => (
     <TouchableOpacity
-      onPress={() => router.push(`/order-confirmation/${order.id}`)}
+      onPress={() => handleViewDetails(order)}
       style={{
         backgroundColor: "#FFFFFF",
         borderRadius: 20,
@@ -458,7 +599,7 @@ export default function OrdersScreen() {
                 marginLeft: 4,
               }}
             >
-              {new Date(order.createdAt).toLocaleDateString("en-US", {
+              {new Date(order.createdAt || order.created_at || order.createdAtUtc || order.createdDate || Date.now()).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
@@ -498,7 +639,7 @@ export default function OrdersScreen() {
               color: "#8B5CF6",
             }}
           >
-            ₹{parseFloat(order.finalTotal || order.totalPrice || 0).toFixed(2)}
+            ₹{parseFloat(order.finalTotal || order.totalPrice || order.total_amount || order.total || 0).toFixed(2)}
           </Text>
         </View>
       </View>
@@ -607,6 +748,7 @@ export default function OrdersScreen() {
       {/* Quick Actions */}
       <View style={{ flexDirection: "row", gap: 8 }}>
         <TouchableOpacity
+          onPress={() => handleViewDetails(order)}
           style={{
             flex: 1,
             backgroundColor: "#F8FAFC",
@@ -627,6 +769,30 @@ export default function OrdersScreen() {
             View Details
           </Text>
         </TouchableOpacity>
+        {isOnlineAndUnpaid(order) && (
+          <TouchableOpacity
+            onPress={() => handlePayNow(order)}
+            style={{
+              marginLeft: 8,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: '#F59E0B',
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontFamily: 'Inter_600SemiBold',
+                color: '#FFFFFF',
+              }}
+            >
+              Pay Now
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {canModifyOrder(order) && (
           <TouchableOpacity
@@ -1128,7 +1294,14 @@ export default function OrdersScreen() {
                       color: "#10B981",
                     }}
                   >
-                    {orders.filter((o) => o.status === "delivered").length}
+                    {orders.filter((o) => {
+                      const status = getOrderStatus(o);
+                      const pstatus = getPaymentStatus(o);
+                      // Consider completed only when delivered or explicitly paid + confirmed/completed
+                      if (status === 'delivered') return true;
+                      if ((pstatus === 'completed' || pstatus === 'paid' || pstatus === 'succeeded') && ['confirmed','completed','paid','delivered'].includes(status)) return true;
+                      return false;
+                    }).length}
                   </Text>
                   <Text
                     style={{
@@ -1149,9 +1322,9 @@ export default function OrdersScreen() {
                       color: "#F59E0B",
                     }}
                   >
-                    ₹
-                    {orders
-                      .reduce((sum, order) => sum + order.total_amount, 0)
+                    ₹{orders
+                      .filter((o) => isOrderDisplayable(o))
+                      .reduce((sum, o) => sum + (Number(o.total_amount ?? o.finalTotal ?? o.totalPrice ?? o.total) || 0), 0)
                       .toFixed(0)}
                   </Text>
                   <Text

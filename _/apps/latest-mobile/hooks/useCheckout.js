@@ -1,6 +1,8 @@
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { Alert, Linking } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Alert, AppState, Linking } from "react-native";
+import * as WebBrowser from 'expo-web-browser';
+import * as LinkingExpo from 'expo-linking';
 import { useDispatch, useSelector } from 'react-redux';
 import { apiService } from "../config/api";
 import { setSelectedAddress } from "../store/Address/AddressSlice";
@@ -17,6 +19,37 @@ export function useCheckout() {
   
   // Get cart functions
   const { clearCart } = useCart();
+  const appStateRef = useRef(AppState.currentState);
+  const pendingOrderIdRef = useRef(null);
+
+  // Helper: verify payment for a pending order and navigate if paid
+  const verifyPendingPayment = async () => {
+    try {
+      if (!pendingOrderIdRef.current) return false;
+      const latest = await apiService.getOrderById(pendingOrderIdRef.current);
+      const paid = latest?.payment_status === 'completed' || latest?.status === 'confirmed' || latest?.status === 'paid';
+      if (paid) {
+        clearCart();
+        router.replace(`/order-confirmation/${pendingOrderIdRef.current}`);
+        pendingOrderIdRef.current = null;
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.warn('Payment verification failed:', e?.message || e);
+      return false;
+    }
+  };
+
+  // Helper: poll server a few times to catch delayed PSP notifications
+  const pollPaymentStatus = async (attempts = 6, intervalMs = 4000) => {
+    for (let i = 0; i < attempts; i++) {
+      const ok = await verifyPendingPayment();
+      if (ok) return true;
+      await new Promise(res => setTimeout(res, intervalMs));
+    }
+    return false;
+  };
 
   // Use Redux selectedAddress instead of local state
   const updateSelectedAddress = (address) => dispatch(setSelectedAddress(address));
@@ -96,11 +129,17 @@ export function useCheckout() {
       return;
     }
 
+    if (!selectedAddress?.id) {
+      console.log("Skipping cart fetch: no selected address yet");
+      setCartData(null);
+      setCartLoading(false);
+      return;
+    }
+
     try {
       setCartLoading(true);
       console.log("Fetching cart data for user ID:", userId);
-      const addressId = selectedAddress?.id || "e17a3e7b-2469-4b70-86a1-adb358787f3c"; // Use selected address or default
-      
+      const addressId = selectedAddress.id;
       const data = await apiService.getCartItems(userId, addressId);
       setCartData(data);
     } catch (error) {
@@ -264,8 +303,8 @@ export function useCheckout() {
         
         // Prepare order payload with real user ID
         const orderPayload = {
-          addressId: selectedAddress?.id || "66d22b07-89e9-4bd8-bfec-d6d7bf936a0a", // Use selected address or fallback
-          deliverySlotId: selectedDeliverySlot?.slotData?.id || "c7e8d862", // Use selected slot or fallback
+          addressId: selectedAddress?.id,
+          deliverySlotId: selectedDeliverySlot?.slotData?.id,
           items: cartData.items.map(item => ({
             productId: item.ProductId,
             quantity: item.Quantity,
@@ -279,40 +318,74 @@ export function useCheckout() {
 
         console.log("Order payload:", JSON.stringify(orderPayload, null, 2));
 
+        if (!orderPayload.addressId || !orderPayload.deliverySlotId) {
+          throw new Error("Address or delivery slot missing");
+        }
+
         // Call the order placement API
         console.log("Calling API...");
         const orderResponse = await apiService.placeOrder(orderPayload);
         console.log("API Response:", orderResponse);
         
-        // Check if payment link is provided in the response (for prepared orders)
-        if (orderResponse.paymentLink) {
+        const isCod = selectedPaymentMethod === 'cod';
+        // Check if payment link is provided in the response (for prepaid/UPI)
+        if (!isCod && orderResponse.paymentLink) {
           console.log("Payment link received:", orderResponse.paymentLink);
           
-          // Open the payment link
+          // Open the payment link (prefer in-app to keep user inside app)
           try {
-            const supported = await Linking.canOpenURL(orderResponse.paymentLink);
-            if (supported) {
-              console.log("Opening payment link...");
-              await Linking.openURL(orderResponse.paymentLink);
-              console.log("Payment link opened successfully");
-              
-              Alert.alert(
-                "Payment Required", 
-                "Please complete the payment in the opened browser. Your order will be confirmed after successful payment.",
-                [
-                  {
-                    text: "OK",
-                    onPress: () => {
-                      // Clear cart after opening payment link
-                      console.log("Clearing cart after opening payment link...");
+            const payUrl = orderResponse.paymentLink;
+            const isUpiIntent = typeof payUrl === 'string' && payUrl.startsWith('upi://');
+            const isFinalReceipt = typeof payUrl === 'string' && payUrl.includes('/mycart/address/order-placed/');
+
+            // Save orderId for verification on return
+            const createdOrderId = orderResponse.orderId || orderResponse.id;
+            pendingOrderIdRef.current = createdOrderId || null;
+
+            // Attach AppState listener to verify payment status when app comes to foreground
+            const onAppStateChange = async (nextState) => {
+              if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
+                try {
+                  if (pendingOrderIdRef.current) {
+                    console.log('Verifying payment status for order:', pendingOrderIdRef.current);
+                    const latest = await apiService.getOrderById(pendingOrderIdRef.current);
+                    const paid = latest?.payment_status === 'completed' || latest?.status === 'confirmed' || latest?.status === 'paid';
+                    if (paid) {
                       clearCart();
+                      router.replace(`/order-confirmation/${pendingOrderIdRef.current}`);
+                      pendingOrderIdRef.current = null;
+                    } else {
+                      Alert.alert('Payment Pending', 'Payment not confirmed. If you paid, please wait a moment or try again from Orders.');
                     }
-                  }
-                ]
-              );
+                }
+                } catch (verifyErr) {
+                  console.warn('Payment verification failed:', verifyErr?.message || verifyErr);
+                }
+              }
+              appStateRef.current = nextState;
+            };
+            AppState.removeEventListener?.('change', onAppStateChange);
+            AppState.addEventListener('change', onAppStateChange);
+
+            if (isUpiIntent) {
+              // Open UPI intent directly (GPay/PhonePe)
+              console.log('Opening UPI intent...');
+              await Linking.openURL(payUrl);
+              // Begin short polling after user returns
+              setTimeout(() => { pollPaymentStatus(); }, 1500);
+            } else if (!isFinalReceipt) {
+              // Open in-app web auth session to keep user inside app; await their return
+              const redirectUrl = LinkingExpo.createURL('payment-callback');
+              console.log('Opening in-app browser with redirectUrl:', redirectUrl);
+              const result = await WebBrowser.openAuthSessionAsync(payUrl, redirectUrl);
+              console.log('AuthSession result:', result?.type);
+              // After user dismisses/returns, start polling server
+              setTimeout(() => { pollPaymentStatus(); }, 1500);
             } else {
-              console.log("Cannot open payment link");
-              Alert.alert("Error", "Cannot open payment link. Please try again.");
+              // Do not redirect to external receipt page; keep user in app and rely on verification
+              console.log('Skipping external receipt URL to keep user in app');
+              // Kick off polling shortly after to avoid feeling stuck
+              setTimeout(() => { pollPaymentStatus(); }, 1000);
             }
           } catch (error) {
             console.error("Error opening payment link:", error);
@@ -329,40 +402,16 @@ export function useCheckout() {
           if (!orderId) {
             throw new Error("Order ID not received from server");
           }
-          
-          // Clear cart after successful order placement
-          console.log("Order placed successfully, clearing cart...");
-          clearCart();
-          
-          console.log("=== NAVIGATION DEBUG ===");
-          console.log("orderId for navigation:", orderId);
-          console.log("Navigation route:", `/order-confirmation/${orderId}`);
-          console.log("router object:", router);
-          
-          // Try direct navigation first
-          try {
-            console.log("Attempting direct navigation...");
-            router.replace(`/order-confirmation/${orderId}`);
-            console.log("Direct navigation command executed successfully");
-          } catch (navError) {
-            console.error("Direct navigation error:", navError);
+
+          // If payment method is prepaid but no link is present, do NOT confirm immediately
+          if (!isCod) {
+            Alert.alert('Payment Pending', 'We could not create a payment link. Your order is pending payment. Please try again from Orders.');
+            return;
           }
-          
-          Alert.alert("Success", "Order placed successfully!", [
-            {
-              text: "OK",
-              onPress: () => {
-                // Fallback navigation in case direct navigation didn't work
-                console.log("Alert OK pressed - attempting fallback navigation");
-                try {
-                  router.push(`/order-confirmation/${orderId}`);
-                  console.log("Fallback navigation executed");
-                } catch (navError) {
-                  console.error("Fallback navigation error:", navError);
-                }
-              }
-            }
-          ]);
+
+          // COD flow: confirm immediately
+          clearCart();
+          router.replace(`/order-confirmation/${orderId}`);
         }
       } catch (error) {
         console.error('Error placing order:', error);

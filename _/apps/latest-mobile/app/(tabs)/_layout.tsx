@@ -2,7 +2,8 @@ import { Tabs } from "expo-router";
 import {
     Grid3X3,
     Home,
-    RotateCcw
+    RotateCcw,
+    ShoppingCart
 } from "lucide-react-native";
 import { Platform, useColorScheme, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -130,6 +131,21 @@ export default function TabLayout() {
         }}
       />
 
+      <Tabs.Screen
+        name="cart"
+        options={{
+          title: "Cart",
+          tabBarIcon: ({ focused }) => (
+            <DuotoneTabIcon
+              icon={ShoppingCart}
+              focused={focused}
+              primaryColor="#6366F1"
+              secondaryColor="#C7D2FE"
+            />
+          ),
+        }}
+      />
+
       {/* Hidden routes for navigation */}
       <Tabs.Screen
         name="search"
@@ -157,37 +173,7 @@ export default function TabLayout() {
           href: null,
         }}
       />
-      <Tabs.Screen
-        name="order-tracking/[id]"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="cart"
-        options={{
-          href: null,
-        }}
-      />
 
-      <Tabs.Screen
-        name="address"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="phone-auth"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="profile-setup"
-        options={{
-          href: null,
-        }}
-      />
       <Tabs.Screen
         name="subscriptions"
         options={{

@@ -44,6 +44,7 @@ import status from "../../store/Constants";
 import { logout } from "../../store/Signin/SigninSlice";
 import { fetchPersonalDetails } from "../../store/Signin/SigninThunk";
 import { getFont, getTextStyle } from "../../utils/fontStyles";
+import { apiService } from "../../config/api";
 
 export default function ProfileScreen() {
   const [fontsLoaded] = useFonts({
@@ -66,6 +67,49 @@ export default function ProfileScreen() {
   const [profileImage, setProfileImage] = useState(
     "https://raw.createusercontent.com/3a830457-6aee-4df3-8acc-d221b7c17d6c/"
   );
+
+  // Orders stats from API (keeps Profile consistent with Orders screen)
+  const [ordersStats, setOrdersStats] = useState({ totalVisible: 0, totalCompleted: 0, totalSpent: 0 });
+
+  // Helpers to normalize server fields (aligned with Orders screen)
+  const getOrderStatus = (order: any) => (order?.status || order?.order_status || '').toLowerCase();
+  const getPaymentStatus = (order: any) => (order?.payment_status || order?.paymentStatus || '').toLowerCase();
+  const getPaymentMethod = (order: any) => (order?.paymentDetails?.method || order?.payment_method || '').toLowerCase();
+  const isOrderDisplayable = (order: any) => {
+    const status = getOrderStatus(order);
+    const pstatus = getPaymentStatus(order);
+    const method = getPaymentMethod(order);
+    if (method === 'cash' || method === 'cod' || method === 'cod-prepared') return true;
+    if (['completed', 'confirmed', 'delivered', 'paid'].includes(status)) return true;
+    if (pstatus === 'completed' || pstatus === 'paid' || pstatus === 'succeeded') return true;
+    return false;
+  };
+
+  useEffect(() => {
+    const loadOrdersStats = async () => {
+      try {
+        if (!isAuthenticated || !user) return;
+        const uid = user?.id || user?.userId;
+        if (!uid) return;
+        const response = await apiService.getOrdersByUserId(uid);
+        const all = Array.isArray(response?.orders) ? response.orders : [];
+        const visible = all.filter(isOrderDisplayable);
+        const completed = visible.filter((o: any) => {
+          const status = getOrderStatus(o);
+          const pstatus = getPaymentStatus(o);
+          if (status === 'delivered') return true;
+          if ((pstatus === 'completed' || pstatus === 'paid' || pstatus === 'succeeded') && ['confirmed','completed','paid','delivered'].includes(status)) return true;
+          return false;
+        });
+        const spent = visible.reduce((sum: number, o: any) => sum + (Number(o.total_amount ?? o.finalTotal ?? o.totalPrice ?? o.total) || 0), 0);
+        setOrdersStats({ totalVisible: visible.length, totalCompleted: completed.length, totalSpent: spent });
+      } catch (e) {
+        console.warn('Failed to load orders stats:', (e as any)?.message || e);
+        setOrdersStats({ totalVisible: 0, totalCompleted: 0, totalSpent: 0 });
+      }
+    };
+    loadOrdersStats();
+  }, [isAuthenticated, user]);
 
   // Fetch personal details when component mounts
   useEffect(() => {
@@ -117,12 +161,13 @@ export default function ProfileScreen() {
   const displayMobile = personalDetails?.MobileNumber || user?.mobileNumber || "Not provided";
   const currentBalance = 1250;
   const tier = "Gold";
-  const totalOrders = 8;
+
+  
 
   // Sample user stats
   const userStats = {
-    totalOrders: totalOrders,
-    totalSpent: 4850,
+    totalOrders: ordersStats.totalVisible,
+    totalSpent: ordersStats.totalSpent,
     favoriteItems: 12,
     memberSince: "2023",
   };
@@ -158,7 +203,7 @@ export default function ProfileScreen() {
     {
       icon: Package,
       label: "Order History",
-      subtitle: `${userStats.totalOrders} completed orders`,
+      subtitle: `${ordersStats.totalCompleted} completed orders`,
       onPress: () => router.push("/(tabs)/orders"),
       color: "#8B5CF6",
       bgColor: "#EDE9FE",

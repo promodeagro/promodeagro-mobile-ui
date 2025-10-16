@@ -1,50 +1,209 @@
-# Welcome to your Expo app 👋
+# Promode Agro Mobile App 🛒
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A modern React Native e-commerce mobile application built with Expo, featuring grocery shopping, order management, and user authentication.
 
-## Get started
+## 🚨 Important: SDK Version Requirement
 
-1. Install dependencies
+**This project requires Expo SDK 53. Do NOT upgrade to SDK 54 as it may cause compatibility issues.**
 
-   ```bash
-   npm install
-   ```
+Current SDK Version: `~53.0.20`
 
-2. Start the app
+## 📋 Prerequisites
 
-   ```bash
-   npx expo start
-   ```
+Before running this project, ensure you have the following installed:
 
-In the output, you'll find options to open the app in a
+- **Node.js** (v18 or higher)
+- **npm** or **yarn**
+- **Expo CLI** (latest version compatible with SDK 53)
+- **Git**
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Mobile Development Setup
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+For mobile development, you'll also need:
 
-## Get a fresh project
+- **Android Studio** (for Android development)
+- **Xcode** (for iOS development - macOS only)
+- **Expo Go app** on your mobile device (for testing)
 
-When you're ready, run:
+## 🚀 Getting Started
+
+### 1. Clone the Repository
 
 ```bash
-npm run reset-project
+git clone <repository-url>
+cd mobile-app
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Install Dependencies
 
-## Learn more
+```bash
+npm install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### 3. Verify Expo SDK Version
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Ensure you're using the correct Expo SDK version:
 
-## Join the community
+```bash
+npx expo --version
+```
 
-Join our community of developers creating universal apps.
+If you need to install the correct Expo CLI version for SDK 53:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npm install -g @expo/cli@latest
+```
+
+### 4. Start the Development Server
+
+```bash
+npm start
+# or
+npx expo start
+```
+
+### 5. Run on Different Platforms
+
+**For Android:**
+```bash
+npm run android
+# or
+npx expo start --android
+```
+
+**For iOS:**
+```bash
+npm run ios
+# or
+npx expo start --ios
+```
+
+**For Web:**
+```bash
+npm run web
+# or
+npx expo start --web
+```
+
+## 📱 Testing the App
+
+### Option 1: Expo Go (Recommended for quick testing)
+1. Install [Expo Go](https://expo.dev/go) on your mobile device
+2. Scan the QR code from the terminal or browser
+3. The app will load on your device
+
+### Option 2: Development Build
+1. Use Android Studio emulator or iOS simulator
+2. Follow the [Expo development build guide](https://docs.expo.dev/develop/development-builds/introduction/)
+
+## 🏗️ Project Structure
+
+```
+├── app/                    # Main app screens (file-based routing)
+│   ├── (tabs)/            # Tab navigation screens
+│   ├── auth.jsx           # Authentication screen
+│   ├── checkout.tsx       # Checkout flow
+│   └── ...
+├── components/            # Reusable UI components
+├── store/                 # Redux store and slices
+├── utils/                 # Utility functions and contexts
+├── config/                # API configuration
+├── constants/             # App constants
+└── assets/               # Images, fonts, and static assets
+```
+
+## 🛠️ Available Scripts
+
+- `npm start` - Start the Expo development server
+- `npm run android` - Run on Android device/emulator
+- `npm run ios` - Run on iOS device/simulator
+- `npm run web` - Run on web browser
+- `npm run lint` - Run ESLint for code quality
+- `npm run reset-project` - Reset to a fresh project state
+
+## 🔧 Key Technologies
+
+- **Expo SDK 53** - React Native framework
+- **Expo Router** - File-based navigation
+- **Redux Toolkit** - State management
+- **React Query** - Server state management
+- **TypeScript** - Type safety
+- **React Native Reanimated** - Animations
+- **Lucide React Native** - Icons
+
+## 📚 Development Guidelines
+
+### Code Standards
+- Follow TypeScript best practices
+- Use functional components with hooks
+- Maintain consistent code formatting
+- Write clear, readable code with proper comments
+
+### State Management
+- Use Redux Toolkit for global state
+- Use React Query for server state
+- Use local state for component-specific data
+
+### Navigation
+- This project uses Expo Router for file-based routing
+- Screen files are located in the `app/` directory
+- Tab navigation is configured in `app/(tabs)/_layout.tsx`
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**1. Metro bundler issues:**
+```bash
+npx expo start --clear
+```
+
+**2. Node modules issues:**
+```bash
+rm -rf node_modules
+npm install
+```
+
+**3. Expo CLI version mismatch:**
+```bash
+npm install -g @expo/cli@latest
+```
+
+**4. Android build issues:**
+- Ensure Android Studio is properly configured
+- Check that Android SDK is installed
+- Verify environment variables
+
+**5. iOS build issues:**
+- Ensure Xcode is installed and updated
+- Check iOS simulator is available
+- Verify provisioning profiles (for physical devices)
+
+## 📖 Documentation
+
+- [Expo Documentation](https://docs.expo.dev/) - Official Expo guides
+- [React Native Documentation](https://reactnative.dev/) - React Native fundamentals
+- [Expo Router Documentation](https://docs.expo.dev/router/introduction/) - Navigation guide
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+This project is private and proprietary.
+
+## 🆘 Support
+
+For technical support or questions:
+- Check the [Expo documentation](https://docs.expo.dev/)
+- Review the troubleshooting section above
+- Create an issue in the repository
+
+---
+
+**Remember: Always use Expo SDK 53 for this project. Do not upgrade to SDK 54.**

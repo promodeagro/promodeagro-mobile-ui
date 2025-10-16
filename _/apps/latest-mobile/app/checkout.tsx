@@ -26,6 +26,7 @@ import { PaymentOptions, PaymentMethod } from "../components/checkout/PaymentOpt
 import { PlaceOrderButton } from "../components/checkout/PlaceOrderButton";
 import { useCheckout } from "../hooks/useCheckout";
 import { useCart } from "../utils/CartContext";
+import { CategoryProductsSection } from "../components/home/CategoryProductsSection";
 
 export default function CheckoutScreen() {
   const [fontsLoaded] = useFonts({
@@ -76,8 +77,13 @@ export default function CheckoutScreen() {
   const [addressModalVisible, setAddressModalVisible] = useState(false);
   const [localPayment, setLocalPayment] = useState<PaymentMethod>("cod");
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
-  const { replaceCart } = useCart();
+  const { replaceCart, clearCart } = useCart();
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Home page products to show a familiar list in checkout (like home)
+  const { homePageProductsData } = useSelector((state) => state?.home || {
+    homePageProductsData: { status: '', data: [], error: null }
+  });
 
   const lineItems = (cartItems || []).map((it) => ({
     id: it.id,
@@ -169,11 +175,12 @@ export default function CheckoutScreen() {
     };
   }, [editableItems, hasUserEdited, replaceCart]);
 
-  // Authentication protection - redirect to welcome if not authenticated
+  // Authentication protection - redirect to home if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      console.log("User not authenticated, redirecting to welcome screen");
-      router.replace("/welcome");
+      console.log("User not authenticated, redirecting to home screen");
+      // Use push instead of replace to allow back navigation
+      router.push("/(tabs)/home");
       return;
     }
   }, [isAuthenticated, router]);
@@ -213,12 +220,38 @@ export default function CheckoutScreen() {
         {/* 1) Cart items first */}
         <CartItemsList items={editableItems} onIncrease={handleIncrease} onDecrease={handleDecrease} onRemove={handleRemove} />
 
-        {/* 2) Missed something? actions with related products */}
-        <SimilarProducts
-          basedOnCategory={(lineItems?.[0]?.product?.category as any) || undefined}
-          onAddMore={() => router.push("/(tabs)/home")}
-          onSeeAll={() => router.push("/(tabs)/search")}
-        />
+        {/* Remove All button - visible only when there are items */}
+        {editableItems.length > 0 && (
+          <View style={{ paddingHorizontal: 16, marginTop: 8, marginBottom: 8, alignItems: 'flex-end' }}>
+            <TouchableOpacity
+              onPress={() => {
+                setHasUserEdited(true);
+                setEditableItems([]);
+                // also clear global cart immediately
+                clearCart();
+              }}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                borderRadius: 10,
+                backgroundColor: '#EF4444',
+              }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Remove All</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* 2) Missed something? Show products like on Home + See all */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>Missed something?</Text>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/categories')}>
+            <Text style={{ color: '#8B5CF6', fontWeight: '700' }}>See all products</Text>
+          </TouchableOpacity>
+        </View>
+        {!!homePageProductsData?.data?.length && (
+          <CategoryProductsSection categoryData={homePageProductsData.data} />
+        )}
         
         {/* 3) Order summary (bill) */}
         <OrderSummary

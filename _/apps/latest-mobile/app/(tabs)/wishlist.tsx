@@ -22,6 +22,7 @@ import {
   StickyNote,
   AlertCircle,
   ChevronDown,
+  ArrowLeft,
 } from 'lucide-react-native';
 import {
   useFonts,
@@ -233,11 +234,18 @@ export default function WishlistScreen() {
         borderBottomWidth: 1,
         borderBottomColor: '#F3F4F6',
       }}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ position: 'absolute', left: 16, top: insets.top + 10, backgroundColor: '#111827', borderRadius: 16, padding: 6, opacity: 0.9 }}
+        >
+          <ArrowLeft size={16} color="#FFFFFF" />
+        </TouchableOpacity>
         <Text style={{
           fontSize: 24,
           fontFamily: 'Inter_700Bold',
           color: '#2D2D2D',
           marginBottom: 16,
+          marginLeft: 28,
         }}>
           My Wishlist
         </Text>

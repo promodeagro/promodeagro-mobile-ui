@@ -9,13 +9,14 @@ import {
 import * as Location from 'expo-location';
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Platform, RefreshControl, ScrollView, Text, TouchableOpacity, useColorScheme, View } from "react-native";
+import { useEffect, useState, useCallback } from "react";
+import { ActivityIndicator, Alert, Platform, RefreshControl, ScrollView, Text, TouchableOpacity, useColorScheme, View, BackHandler, ToastAndroid } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { categoryProducts } from "../../data/categoryData";
-import { trendingCategories, weeklyStaples } from "../../data/homeScreenData";
+import { trendingCategories } from "../../data/homeScreenData";
 import { setSelectedAddress } from "../../store/Address/AddressSlice";
 import status from "../../store/Constants";
 import { fetchCategories, fetchHomePageProducts, fetchOffers } from "../../store/Home/HomeThunk";
@@ -27,7 +28,6 @@ import { CategoryProductsSection } from "../../components/home/CategoryProductsS
 import { HomeScreenHeader } from "../../components/home/HomeScreenHeader";
 import { OffersSliderSection } from "../../components/home/OffersSliderSection";
 import { TrendingCategoriesSection } from "../../components/home/TrendingCategoriesSection";
-import { WeeklyStaplesSection } from "../../components/home/WeeklyStaplesSection";
 import LocationSelector from "../../components/LocationSelector";
 
 export default function HomeScreen() {
@@ -174,42 +174,6 @@ export default function HomeScreen() {
     deliveryTime: product.deliveryTime,
   }));
 
-  // Mock data for weekly staples
-  const weeklyStaplesProducts = weeklyStaples.map(item => ({
-    id: item.id,
-    name: item.title,
-    rating: 4.5,
-    images: [item.image],
-    variations: [
-      {
-        id: `${item.id}-500g`,
-        name: "500g",
-        price: Math.round(item.price * 0.5),
-        original_price: Math.round(item.price * 0.5),
-        unit: "500g",
-        stock_quantity: item.inStock ? 20 : 0,
-        is_default: false
-      },
-      {
-        id: `${item.id}-1kg`,
-        name: "1kg",
-        price: item.price,
-        original_price: item.price,
-        unit: "1kg",
-        stock_quantity: item.inStock ? 15 : 0,
-        is_default: true
-      },
-      {
-        id: `${item.id}-2kg`,
-        name: "2kg",
-        price: Math.round(item.price * 1.8),
-        original_price: Math.round(item.price * 1.8),
-        unit: "2kg",
-        stock_quantity: item.inStock ? 10 : 0
-      }
-    ],
-    in_stock: item.inStock
-  }));
 
   // Mock data for trending categories
   const trendingCategoriesData = trendingCategories.map(cat => ({
@@ -220,43 +184,6 @@ export default function HomeScreen() {
     description: cat.subtitle
   }));
 
-  // Mock data for popular products
-  /* const popularProducts = weeklyStaples.slice(0, 8).map(item => ({
-    id: item.id,
-    name: item.title,
-    rating: 4.5,
-    review_count: Math.floor(Math.random() * 100) + 10,
-    images: [item.image],
-    variations: [
-      {
-        id: `${item.id}-500g`,
-        name: "500g",
-        price: Math.round(item.price * 0.5),
-        original_price: Math.round(item.price * 0.5),
-        unit: "500g",
-        stock_quantity: item.inStock ? 20 : 0,
-        is_default: false
-      },
-      {
-        id: `${item.id}-1kg`,
-        name: "1kg",
-        price: item.price,
-        original_price: item.price,
-        unit: "1kg",
-        stock_quantity: item.inStock ? 15 : 0,
-        is_default: true
-      },
-      {
-        id: `${item.id}-2kg`,
-        name: "2kg",
-        price: Math.round(item.price * 1.8),
-        original_price: Math.round(item.price * 1.8),
-        unit: "2kg",
-        stock_quantity: item.inStock ? 10 : 0
-      }
-    ],
-    in_stock: item.inStock
-  })); */
 
 
 
@@ -288,7 +215,43 @@ export default function HomeScreen() {
   const testAuthentication = () => {
     console.log('Setting test authentication...');
     dispatch(setTestAuth());
+    // Show a brief success message
+    Alert.alert(
+      "Authentication Set",
+      "You are now authenticated and can access checkout.",
+      [{ text: "OK" }]
+    );
   };
+
+  // Ensure authentication state is maintained
+  useEffect(() => {
+    if (!isAuthenticated) {
+      console.log('User not authenticated on home page');
+    } else {
+      console.log('User is authenticated:', user?.id);
+    }
+  }, [isAuthenticated, user]);
+
+  // Android back behavior on Home ONLY: double-back to exit
+  useFocusEffect(
+    useCallback(() => {
+      const backPressTsRef = { current: 0 } as { current: number };
+      const onBackPress = () => {
+        const now = Date.now();
+        if (now - backPressTsRef.current < 1500) {
+          BackHandler.exitApp();
+          return true;
+        }
+        backPressTsRef.current = now;
+        if (Platform.OS === 'android') {
+          try { ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT); } catch {}
+        }
+        return true; // consume on Home
+      };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => sub.remove();
+    }, [])
+  );
 
  
   if (!fontsLoaded) {
@@ -455,15 +418,7 @@ export default function HomeScreen() {
           <CategoryProductsSection categoryData={homePageProductsData.data} />
         )}
         
-        {/* Bought Often (Popular This Week) */}
-        {/* <PopularThisWeekSection
-          items={popularProducts || []}
-        /> */}
         
-        {/* Weekly Staples */}
-        <WeeklyStaplesSection
-          items={weeklyStaplesProducts || []}
-        />
         
         {/* Trending Categories */}
         <TrendingCategoriesSection categories={trendingCategoriesData || []} />

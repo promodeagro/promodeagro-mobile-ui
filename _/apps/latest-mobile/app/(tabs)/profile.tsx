@@ -25,7 +25,8 @@ import {
     Settings,
     Shield,
     Star,
-    User
+    User,
+    ArrowLeft
 } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
@@ -397,11 +398,18 @@ export default function ProfileScreen() {
           elevation: 4,
         }}
       >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ position: 'absolute', left: 16, top: insets.top + 14, backgroundColor: '#111827', borderRadius: 16, padding: 6, opacity: 0.9 }}
+        >
+          <ArrowLeft size={16} color="#FFFFFF" />
+        </TouchableOpacity>
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
             marginBottom: 24,
+            marginLeft: 32
           }}
         >
           <View

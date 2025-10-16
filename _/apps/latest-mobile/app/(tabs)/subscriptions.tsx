@@ -17,7 +17,9 @@ import {
   Settings,
   Calendar,
   Package,
+  ArrowLeft,
 } from "lucide-react-native";
+import { useRouter } from "expo-router";
 
 interface SubscriptionItem {
   product: {
@@ -44,6 +46,7 @@ const SubscriptionsScreen = () => {
   const insets = useSafeAreaInsets();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     fetchSubscriptions();
@@ -194,11 +197,18 @@ const SubscriptionsScreen = () => {
           borderBottomColor: "#e5e7eb",
         }}
       >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ position: 'absolute', left: 16, top: insets.top + 8, backgroundColor: '#111827', borderRadius: 16, padding: 6, opacity: 0.9 }}
+        >
+          <ArrowLeft size={16} color="#FFFFFF" />
+        </TouchableOpacity>
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            marginLeft: 24
           }}
         >
           <View>

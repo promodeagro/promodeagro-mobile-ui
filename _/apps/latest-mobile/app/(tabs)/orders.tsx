@@ -20,6 +20,7 @@ import {
     Truck,
     XCircle,
     X as XIcon,
+    ArrowLeft,
 } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -984,12 +985,19 @@ export default function OrdersScreen() {
           elevation: 4,
         }}
       >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ position: 'absolute', left: 16, top: insets.top + 10, backgroundColor: '#111827', borderRadius: 16, padding: 6, opacity: 0.9 }}
+        >
+          <ArrowLeft size={16} color="#FFFFFF" />
+        </TouchableOpacity>
         <Text
           style={{
             fontSize: 24,
             fontFamily: "Inter_800ExtraBold",
             color: "#111827",
             marginBottom: 8,
+            marginLeft: 28,
           }}
         >
           My Orders

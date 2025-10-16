@@ -2,7 +2,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Calendar, Home, MapPin, Package, Phone, Truck, User } from "lucide-react-native";
+import { Calendar, Home, MapPin, Package, Phone, Truck, User, ArrowLeft } from "lucide-react-native";
 import { apiService } from "../../config/api";
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -104,6 +104,14 @@ export default function OrderTrackingScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: "#F8F9FA", paddingTop: insets.top }}>
       <Stack.Screen options={{ title: "Order Tracking" }} />
+
+      <TouchableOpacity
+        onPress={() => router.back()}
+        style={{ position: 'absolute', top: insets.top + 8, left: 12, zIndex: 20, backgroundColor: '#111827', borderRadius: 20, padding: 8, opacity: 0.9 }}
+      >
+        <ArrowLeft size={18} color="#FFFFFF" />
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
         <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
           <Text style={{ fontSize: 20, fontWeight: "700", color: "#111827", marginBottom: 6 }}>Order #{order.id}</Text>

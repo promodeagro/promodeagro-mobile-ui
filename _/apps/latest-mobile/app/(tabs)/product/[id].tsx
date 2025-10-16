@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Heart, Plus, Minus, Star } from "lucide-react-native";
 import { Image } from "expo-image";
 import { apiService } from "../../../config/api";
+import { useCart } from "../../../utils/CartContext";
 
 interface ProductVariant {
   id: string;
@@ -41,11 +42,31 @@ export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [quantity, setQuantity] = useState(1);
+  const { cartItems, addToCart, updateQuantity } = useCart();
+  const [quantity, setQuantity] = useState(1); // retained for pre-add display, but cart is source of truth after add
   const [selectedVariation, setSelectedVariation] = useState(0);
   const [productData, setProductData] = useState<ProductData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Derive product and variation ASAP to keep hooks before any returns
+  const product = productData as ProductData | null;
+  // Support both `variants` and `variations` from API
+  const variationList = (product as any)?.variants || (product as any)?.variations || [];
+  const currentVariation = variationList?.[selectedVariation] as ProductVariant | undefined;
+  const isInStock = !!(currentVariation?.availability && (currentVariation?.quantity ?? 0) > 0);
+
+  // Cart linkage hooks must run on every render (before early returns)
+  const cartKey = useMemo(() => {
+    if (!product || !currentVariation) return "";
+    return `${product.groupId}-${currentVariation.id}`;
+  }, [product, currentVariation]);
+
+  const currentCartQuantity = useMemo(() => {
+    if (!cartKey) return 0;
+    const entry = cartItems.get(cartKey);
+    return entry?.quantity || 0;
+  }, [cartItems, cartKey]);
 
   // Fetch product data when component mounts
   useEffect(() => {
@@ -100,22 +121,31 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const product = productData;
-  const currentVariation = product.variants?.[selectedVariation];
-  const isInStock = currentVariation?.availability && (currentVariation?.quantity ?? 0) > 0;
+  // product, currentVariation, isInStock, cartKey, and currentCartQuantity are defined above
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!currentVariation) return;
-    
-    // Simple add to cart functionality
-    console.log("Adding to cart:", {
-      productId: product.groupId,
-      variationId: currentVariation.id,
-      quantity,
+    await addToCart(product.groupId, currentVariation.id, {
       price: currentVariation.price,
+      name: currentVariation.unit,
+      unit: currentVariation.unit,
+      image: currentVariation.image || product.image,
     });
-    
-    Alert.alert("Success", `Added ${quantity} ${product.name} to cart!`);
+  };
+
+  const handleIncrease = async () => {
+    if (!currentVariation) return;
+    if (currentCartQuantity === 0) {
+      await handleAddToCart();
+    } else {
+      updateQuantity(cartKey, currentCartQuantity + 1);
+    }
+  };
+
+  const handleDecrease = () => {
+    if (!currentVariation || currentCartQuantity <= 0) return;
+    const next = Math.max(0, currentCartQuantity - 1);
+    updateQuantity(cartKey, next);
   };
 
   const calculateDiscount = (mrp: number, price: number) => {
@@ -315,236 +345,167 @@ export default function ProductDetailScreen() {
             </Text>
           )}
 
-          {product.description && (
-            <Text
-              style={{
-                fontSize: 14,
-                color: "#6B7280",
-                lineHeight: 20,
-                marginBottom: 20,
-              }}
-            >
-              {product.description}
-            </Text>
-          )}
-
-          {/* Tags */}
-          {product.tags && product.tags.length > 0 && (
-            <View style={{ marginBottom: 20 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: "#111827",
-                  marginBottom: 8,
-                }}
-              >
-                Tags
-              </Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                {product.tags.map((tag, index) => (
-                  <View
-                    key={index}
-                    style={{
-                      backgroundColor: "#F3F4F6",
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 16,
-                      marginRight: 8,
-                      marginBottom: 8,
-                    }}
-                  >
-                    <Text style={{ fontSize: 12, color: "#6B7280" }}>{tag}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* Variations */}
-        {product.variants && product.variants.length > 1 && (
-          <View style={{ backgroundColor: "#FFFFFF", marginTop: 8, padding: 20 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                color: "#111827",
-                marginBottom: 12,
-              }}
-            >
-              Select Size
-            </Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              {product.variants.map((variation, index) => (
-                <TouchableOpacity
-                  key={variation.id}
-                  onPress={() => setSelectedVariation(index)}
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: selectedVariation === index ? "#8B5CF6" : "#E5E7EB",
-                    backgroundColor: selectedVariation === index ? "#EDE9FE" : "#FFFFFF",
-                    marginRight: 8,
-                    marginBottom: 8,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: selectedVariation === index ? "#8B5CF6" : "#6B7280",
-                      marginBottom: 2,
-                    }}
-                  >
-                    {variation.unit}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: selectedVariation === index ? "#8B5CF6" : "#9CA3AF",
-                    }}
-                  >
-                    ₹{variation.price}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Bottom Bar */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: "#FFFFFF",
-          paddingHorizontal: 20,
-          paddingTop: 16,
-          paddingBottom: insets.bottom + 16,
-          borderTopWidth: 1,
-          borderTopColor: "#E5E7EB",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 10,
-        }}
-      >
-        {isInStock ? (
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {/* Quantity Selector */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: "#F3F4F6",
-                borderRadius: 12,
-                marginRight: 16,
-                borderWidth: 1,
-                borderColor: "#E5E7EB",
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => setQuantity(Math.max(1, quantity - 1))}
-                style={{
-                  width: 40,
-                  height: 40,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Minus size={16} color="#6B7280" />
-              </TouchableOpacity>
-
+          {/* Select Size - moved above cart controls */}
+          {Array.isArray(variationList) && variationList.length > 1 && (
+            <View style={{ backgroundColor: "#FFFFFF", marginBottom: 12 }}>
               <Text
                 style={{
                   fontSize: 16,
                   fontWeight: "600",
                   color: "#111827",
-                  minWidth: 32,
-                  textAlign: "center",
+                  marginBottom: 12,
                 }}
               >
-                {quantity}
+                Select Size
               </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                {variationList.map((variation: any, index: number) => (
+                  <TouchableOpacity
+                    key={variation.id}
+                    onPress={() => setSelectedVariation(index)}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: selectedVariation === index ? "#8B5CF6" : "#E5E7EB",
+                      backgroundColor: selectedVariation === index ? "#EDE9FE" : "#FFFFFF",
+                      marginRight: 8,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "600",
+                        color: selectedVariation === index ? "#8B5CF6" : "#6B7280",
+                        marginBottom: 2,
+                      }}
+                    >
+                      {variation.unit}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: selectedVariation === index ? "#8B5CF6" : "#9CA3AF",
+                      }}
+                    >
+                      ₹{variation.price}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
 
+          {/* Inline Cart Controls (always visible) */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            {currentCartQuantity === 0 ? (
               <TouchableOpacity
-                onPress={() => setQuantity(quantity + 1)}
+                onPress={handleAddToCart}
+                disabled={!isInStock || !currentVariation}
                 style={{
                   width: 40,
                   height: 40,
+                  backgroundColor: isInStock ? "#8B5CF6" : "#D1D5DB",
+                  borderRadius: 20,
                   justifyContent: "center",
                   alignItems: "center",
+                  marginRight: 16,
+                  opacity: isInStock ? 1 : 0.6,
                 }}
               >
-                <Plus size={16} color="#6B7280" />
+                <Plus size={18} color="#FFFFFF" />
               </TouchableOpacity>
-            </View>
+            ) : (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: "#8B5CF6",
+                  borderRadius: 16,
+                  paddingHorizontal: 6,
+                  paddingVertical: 3,
+                  marginRight: 16,
+                }}
+              >
+                <TouchableOpacity
+                  onPress={handleDecrease}
+                  disabled={!isInStock}
+                  style={{ width: 28, height: 32, justifyContent: "center", alignItems: "center", opacity: isInStock ? 1 : 0.6 }}
+                >
+                  <Minus size={16} color="#FFFFFF" />
+                </TouchableOpacity>
+                <View style={{ paddingHorizontal: 6, paddingVertical: 2, minWidth: 16, justifyContent: "center", alignItems: "center" }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>{currentCartQuantity}</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={handleIncrease}
+                  disabled={!isInStock}
+                  style={{ width: 28, height: 32, justifyContent: "center", alignItems: "center", opacity: isInStock ? 1 : 0.6 }}
+                >
+                  <Plus size={16} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            )}
 
-            {/* Add to Cart Button */}
             <TouchableOpacity
               onPress={handleAddToCart}
+              disabled={!isInStock || !currentVariation}
               style={{
                 flex: 1,
-                backgroundColor: "#8B5CF6",
+                backgroundColor: isInStock ? "#8B5CF6" : "#D1D5DB",
                 borderRadius: 12,
                 paddingVertical: 12,
                 flexDirection: "row",
                 justifyContent: "center",
                 alignItems: "center",
+                opacity: isInStock ? 1 : 0.6,
               }}
             >
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "600",
-                  color: "#FFFFFF",
-                  marginRight: 8,
-                }}
-              >
-                Add to Cart
+              <Text style={{ fontSize: 16, fontWeight: "600", color: "#FFFFFF", marginRight: 8 }}>
+                {currentCartQuantity === 0 ? "Add to Cart" : "Add One More"}
               </Text>
               {currentVariation && (
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  ₹{(currentVariation.price * quantity).toFixed(2)}
+                <Text style={{ fontSize: 16, fontWeight: "600", color: "#FFFFFF" }}>
+                  ₹{(
+                    currentVariation.price * (currentCartQuantity > 0 ? currentCartQuantity : 1)
+                  ).toFixed(2)}
                 </Text>
               )}
             </TouchableOpacity>
           </View>
-        ) : (
-          <View
-            style={{
-              backgroundColor: "#F3F4F6",
-              borderRadius: 12,
-              paddingVertical: 16,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                color: "#9CA3AF",
-              }}
-            >
-              Out of Stock
-            </Text>
-          </View>
-        )}
-      </View>
+
+          {product.description && (
+            <>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: "#111827",
+                  marginBottom: 8,
+                }}
+              >
+                Description
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#6B7280",
+                  lineHeight: 20,
+                  marginBottom: 20,
+                }}
+              >
+                {product.description}
+              </Text>
+            </>
+          )}
+
+        {/* Tags removed per request */}
+        </View>
+
+        {/* Variations moved above; removed from here */}
+      </ScrollView>
     </View>
   );
 }

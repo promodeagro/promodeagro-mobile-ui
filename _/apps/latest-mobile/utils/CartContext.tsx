@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useContext, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useState, useCallback, useMemo, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { apiService } from '../config/api';
 
@@ -46,92 +46,121 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useSelector((state: any) => state.login);
   const userId = user?.id || user?.userId;
 
-  const addToCart = async (productId: string, variationId: string, variationData: any) => {
+  // Debounce ref for API calls
+  const apiCallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Micro-batching: queue quantity updates to apply in a single state update
+  const pendingQuantitiesRef = useRef<Map<string, number>>(new Map());
+  const pendingNewItemsRef = useRef<Map<string, CartItem>>(new Map());
+  const flushTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const scheduleFlush = useCallback(() => {
+    if (flushTimeoutRef.current) return;
+    flushTimeoutRef.current = setTimeout(() => {
+      flushTimeoutRef.current = null;
+      const quantityEntries = Array.from(pendingQuantitiesRef.current.entries());
+      const newItemEntries = Array.from(pendingNewItemsRef.current.entries());
+      if (quantityEntries.length === 0 && newItemEntries.length === 0) return;
+
+      setCartItems((prev) => {
+        const next = new Map(prev);
+        // apply new items first
+        for (const [key, cartItem] of newItemEntries) {
+          if (!next.has(key)) {
+            next.set(key, cartItem);
+          }
+        }
+        // then apply quantity updates
+        for (const [key, qty] of quantityEntries) {
+          if (qty <= 0) {
+            next.delete(key);
+          } else {
+            const existing = next.get(key);
+            if (existing) {
+              next.set(key, { ...existing, quantity: qty });
+            }
+          }
+        }
+        return next;
+      });
+
+      pendingQuantitiesRef.current.clear();
+      pendingNewItemsRef.current.clear();
+    }, 40); // apply within 40ms window
+  }, []);
+
+  const addToCart = useCallback(async (productId: string, variationId: string, variationData: any) => {
     const effectiveVariationId = variationId || productId; // avoid 'default' ids
     const cartKey = `${productId}-${effectiveVariationId}`;
 
-    // Update local state first for immediate UI feedback
-    setCartItems((prev) => {
-      const newCart = new Map(prev);
-      const existing = newCart.get(cartKey);
-      
-      if (existing) {
-        newCart.set(cartKey, {
-          ...existing,
-          quantity: existing.quantity + 1,
-        });
-      } else {
-        newCart.set(cartKey, {
-          product: {
-            id: productId,
-            price: variationData?.price || variationData.price,
-            variation: variationData?.name || variationData.unit || "1 unit",
-            variationId: effectiveVariationId,
-            name: undefined,
-            images: (variationData?.image || (variationData?.images && variationData.images[0])) ? [variationData?.image || variationData?.images?.[0]] : undefined,
-          },
-          quantity: 1,
-        });
-      }
-      
-      return newCart;
-    });
+    // Optimistic local update using micro-batching
+    const existing = cartItems.get(cartKey);
+    if (existing) {
+      const nextQty = (pendingQuantitiesRef.current.get(cartKey) ?? existing.quantity) + 1;
+      pendingQuantitiesRef.current.set(cartKey, nextQty);
+    } else {
+      pendingNewItemsRef.current.set(cartKey, {
+        product: {
+          id: productId,
+          price: variationData?.price || variationData.price,
+          variation: variationData?.name || variationData.unit || "1 unit",
+          variationId: effectiveVariationId,
+          name: undefined,
+          images: (variationData?.image || (variationData?.images && variationData.images[0])) ? [variationData?.image || variationData?.images?.[0]] : undefined,
+        },
+        quantity: 1,
+      });
+      pendingQuantitiesRef.current.set(cartKey, 1);
+    }
+    scheduleFlush();
 
-    // Call API to sync with backend only if user is authenticated
+    // Debounced API call to avoid spamming the server
     if (isAuthenticated && userId) {
-      try {
-        console.log('Adding cart item for user ID:', userId);
-        const cartItems = [{
-          // Backend expects variationId as productId based on error message
-          productId: effectiveVariationId,
-          quantity: 1,
-          // Prefer explicit unit/name fields from variation data
-          quantityUnits: variationData?.quantityUnits || variationData?.unit || variationData?.name || "1 Pcs"
-        }];
-        
-        await apiService.addCartItems(userId, cartItems);
-        console.log('Item added to cart successfully');
-      } catch (error) {
-        console.error('Error adding item to cart:', error);
-        // Optionally revert the local state change if API call fails
+      if (apiCallTimeoutRef.current) {
+        clearTimeout(apiCallTimeoutRef.current);
       }
+      
+      apiCallTimeoutRef.current = setTimeout(async () => {
+        try {
+          console.log('Adding cart item for user ID:', userId);
+          const cartItems = [{
+            // Backend expects variationId as productId based on error message
+            productId: effectiveVariationId,
+            quantity: 1,
+            // Prefer explicit unit/name fields from variation data
+            quantityUnits: variationData?.quantityUnits || variationData?.unit || variationData?.name || "1 Pcs"
+          }];
+          
+          await apiService.addCartItems(userId, cartItems);
+          console.log('Item added to cart successfully');
+        } catch (error) {
+          console.error('Error adding item to cart:', error);
+        }
+      }, 100); // 100ms debounce
     } else {
       console.log('User not authenticated, cart item stored locally only');
     }
-  };
+  }, [isAuthenticated, userId]);
 
-  const removeFromCart = (cartKey: string) => {
+  const removeFromCart = useCallback((cartKey: string) => {
     setCartItems((prev) => {
       const newCart = new Map(prev);
       newCart.delete(cartKey);
       return newCart;
     });
-  };
+  }, []);
 
-  const updateQuantity = (cartKey: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(cartKey);
-      return;
-    }
+  const updateQuantity = useCallback((cartKey: string, quantity: number) => {
+    // Queue update and flush in a micro-batch
+    pendingQuantitiesRef.current.set(cartKey, quantity);
+    scheduleFlush();
+  }, [scheduleFlush]);
 
-    setCartItems((prev) => {
-      const newCart = new Map(prev);
-      const existing = newCart.get(cartKey);
-      if (existing) {
-        newCart.set(cartKey, {
-          ...existing,
-          quantity,
-        });
-      }
-      return newCart;
-    });
-  };
-
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCartItems(new Map());
-  };
+  }, []);
 
-  const replaceCart = (items: Array<{ productId: string; variationId?: string; price: number; quantity: number; name?: string; image?: string }>) => {
+  const replaceCart = useCallback((items: Array<{ productId: string; variationId?: string; price: number; quantity: number; name?: string; image?: string }>) => {
     setCartItems(() => {
       const next = new Map<string, CartItem>();
       for (const it of items) {
@@ -150,13 +179,14 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       }
       return next;
     });
-  };
+  }, []);
 
-  const cartItemsArray = Array.from(cartItems.values());
-  const totalItems = cartItemsArray.reduce((sum, item) => sum + item.quantity, 0);
-  const totalAmount = cartItemsArray.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  // Memoized calculations to prevent unnecessary recalculations
+  const cartItemsArray = useMemo(() => Array.from(cartItems.values()), [cartItems]);
+  const totalItems = useMemo(() => cartItemsArray.reduce((sum, item) => sum + item.quantity, 0), [cartItemsArray]);
+  const totalAmount = useMemo(() => cartItemsArray.reduce((sum, item) => sum + item.product.price * item.quantity, 0), [cartItemsArray]);
 
-  const value: CartContextType = {
+  const value: CartContextType = useMemo(() => ({
     cartItems,
     addToCart,
     removeFromCart,
@@ -165,7 +195,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     replaceCart,
     totalItems,
     totalAmount,
-  };
+  }), [cartItems, addToCart, removeFromCart, updateQuantity, clearCart, replaceCart, totalItems, totalAmount]);
 
   return (
     <CartContext.Provider value={value}>

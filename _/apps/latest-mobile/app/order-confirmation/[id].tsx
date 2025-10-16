@@ -15,7 +15,8 @@ import {
   Home,
   MapPin,
   Package,
-  Truck
+  Truck,
+  ArrowLeft
 } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -231,15 +232,25 @@ export default function OrderConfirmationScreen() {
     <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
       <StatusBar style="light" />
 
+      {/* Back Button */}
+      <TouchableOpacity
+        onPress={() => router.back()}
+        style={{ position: 'absolute', top: insets.top + 12, left: 12, zIndex: 20, backgroundColor: '#111827', borderRadius: 20, padding: 8, opacity: 0.9 }}
+      >
+        <ArrowLeft size={18} color="#FFFFFF" />
+      </TouchableOpacity>
+
       {/* Header with Gradient */}
-      <View style={{
-        paddingTop: insets.top + 20,
-        paddingBottom: 40,
-        paddingHorizontal: 20,
-        backgroundColor: "#10B981",
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-      }}>
+      <View
+        style={{
+          paddingTop: insets.top + 20,
+          paddingBottom: 40,
+          paddingHorizontal: 20,
+          backgroundColor: "#10B981",
+          borderBottomLeftRadius: 24,
+          borderBottomRightRadius: 24,
+        }}
+      >
         {/* Success Animation */}
         <View style={{ alignItems: "center", marginBottom: 20 }}>
           <Animated.View

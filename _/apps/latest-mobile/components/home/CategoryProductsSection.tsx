@@ -2,7 +2,8 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { ChevronDown, Minus, Plus, Star, X } from "lucide-react-native";
 import { useState } from "react";
-import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useMemo, useRef, useCallback, memo } from "react";
+import { Modal, ScrollView, Text, TouchableOpacity, View, FlatList } from "react-native";
 import { useCart } from "../../utils/CartContext";
 
 interface ProductVariation {
@@ -35,105 +36,32 @@ interface CategoryData {
   items: Product[];
 }
 
-export function CategoryProductsSection({ categoryData }: { categoryData: CategoryData[] }) {
-  const router = useRouter();
-  const { cartItems, addToCart, updateQuantity } = useCart();
-  const [showVariationModal, setShowVariationModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  const handleVariationSelect = (product: Product, variation: ProductVariation) => {
-    // Update the product's current variation
-    (product as any).currentVariation = variation;
-    setShowVariationModal(false);
-  };
-
-  const openVariationModal = (product: Product) => {
-    setSelectedProduct(product);
-    setShowVariationModal(true);
-  };
-
-  if (!categoryData || categoryData.length === 0) {
-    return null;
-  }
-
-  // Define the specific order of categories to display
-  const categoryOrder = ["Bengali Special", "Fresh Fruits", "Fresh Vegetables"];
-  
-  // Filter and sort categories according to the specified order
-  const orderedCategories = categoryOrder
-    .map(categoryName => 
-      categoryData.find(category => category.category === categoryName)
-    )
-    .filter(Boolean); // Remove undefined entries
-
-  return (
-    <>
-      {orderedCategories.map((category, categoryIndex) => (
-        <View key={`${category.category}-${categoryIndex}`} style={{ marginBottom: 32 }}>
-          <Text
-            style={{
-              fontSize: 20,
-              fontFamily: "Inter_700Bold",
-              color: "#111827",
-              paddingHorizontal: 16,
-              marginBottom: 16,
-            }}
-          >
-            {category.category}
-          </Text>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: 16 }}
-          >
-            {category.items.map((item) => {
-              // Get the first available variation
-              const defaultVariation = item.variations?.[0];
-              const currentVariation = defaultVariation || {
-                id: item.groupId,
-                name: "1 unit",
-                price: 0,
-                mrp: 0,
-                unit: "unit",
-                quantity: 1,
-                availability: true,
-                inCart: false,
-                inWishlist: false,
-              };
-
-              // Check if the current variation is in stock
-              const isInStock = currentVariation?.availability === true && (currentVariation?.quantity > 0 || currentVariation?.stock_quantity > 0);
-              
-              // Get current quantity in cart for this product variation
-              const cartKey = `${item.groupId}-${currentVariation.id}`;
-              const cartItem = cartItems.get(cartKey);
-              const currentQuantity = cartItem?.quantity || 0;
-
-                             const handleAddToCart = async () => {
-                 await addToCart(item.groupId, currentVariation.id, currentVariation);
-               };
-
-                             const handleIncreaseQuantity = async () => {
-                 if (currentQuantity === 0) {
-                   await addToCart(item.groupId, currentVariation.id, currentVariation);
-                 } else {
-                   updateQuantity(cartKey, currentQuantity + 1);
-                 }
-               };
-
-              const handleDecreaseQuantity = () => {
-                if (currentQuantity > 1) {
-                  updateQuantity(cartKey, currentQuantity - 1);
-                } else {
-                  updateQuantity(cartKey, 0); // This will remove the item
-                }
-              };
-
+// Memoized Product Card Component
+const ProductCard = memo(({ 
+  item, 
+  currentVariation, 
+  currentQuantity, 
+  isInStock, 
+  onAddToCart, 
+  onIncreaseQuantity, 
+  onDecreaseQuantity, 
+  onOpenVariationModal,
+  onProductPress 
+}: {
+  item: Product;
+  currentVariation: ProductVariation;
+  currentQuantity: number;
+  isInStock: boolean;
+  onAddToCart: () => void;
+  onIncreaseQuantity: () => void;
+  onDecreaseQuantity: () => void;
+  onOpenVariationModal: () => void;
+  onProductPress: () => void;
+}) => {
               return (
                 <TouchableOpacity
                   key={item.groupId}
-                  onPress={() => router.push(`/(tabs)/product/${item.groupId}`)}
+      onPress={onProductPress}
                   style={{
                     width: 180,
                     backgroundColor: "#FFFFFF",
@@ -262,7 +190,7 @@ export function CategoryProductsSection({ categoryData }: { categoryData: Catego
                     {/* Variation Selector */}
                     {item.variations && item.variations.length > 0 && (
                       <TouchableOpacity
-                        onPress={() => item.variations.length > 1 ? openVariationModal(item) : null}
+            onPress={() => item.variations.length > 1 ? onOpenVariationModal() : null}
                         disabled={item.variations.length === 1}
                         style={{
                           flexDirection: "row",
@@ -337,10 +265,10 @@ export function CategoryProductsSection({ categoryData }: { categoryData: Catego
                       {currentQuantity === 0 ? (
                         <TouchableOpacity
                           style={{
-                            width: 24,
-                            height: 24,
+                width: 32,
+                height: 32,
                             backgroundColor: isInStock ? "#8B5CF6" : "#D1D5DB",
-                            borderRadius: 12,
+                borderRadius: 16,
                             justifyContent: "center",
                             alignItems: "center",
                           }}
@@ -348,11 +276,11 @@ export function CategoryProductsSection({ categoryData }: { categoryData: Catego
                           onPress={(e) => {
                             e.stopPropagation();
                             if (isInStock) {
-                              handleAddToCart();
+                  onAddToCart();
                             }
                           }}
                         >
-                          <Plus size={12} color={isInStock ? "#FFFFFF" : "#9CA3AF"} strokeWidth={2.5} />
+              <Plus size={16} color={isInStock ? "#FFFFFF" : "#9CA3AF"} strokeWidth={2.5} />
                         </TouchableOpacity>
                       ) : (
                         <View
@@ -368,7 +296,7 @@ export function CategoryProductsSection({ categoryData }: { categoryData: Catego
                           <TouchableOpacity
                             onPress={(e) => {
                               e.stopPropagation();
-                              handleDecreaseQuantity();
+                  onDecreaseQuantity();
                             }}
                             style={{
                               width: 20,
@@ -405,7 +333,7 @@ export function CategoryProductsSection({ categoryData }: { categoryData: Catego
                             onPress={(e) => {
                               e.stopPropagation();
                               if (isInStock) {
-                                handleIncreaseQuantity();
+                    onIncreaseQuantity();
                               }
                             }}
                             disabled={!isInStock}
@@ -425,8 +353,233 @@ export function CategoryProductsSection({ categoryData }: { categoryData: Catego
                   </View>
                 </TouchableOpacity>
               );
-            })}
-          </ScrollView>
+});
+
+export const CategoryProductsSection = memo(({ categoryData }: { categoryData: CategoryData[] }) => {
+  const router = useRouter();
+  const { cartItems, addToCart, updateQuantity } = useCart();
+  const [showVariationModal, setShowVariationModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+
+  // Lightweight debounce util (per instance)
+  const debounce = useCallback((fn: (...args: any[]) => void, wait: number) => {
+    let t: any;
+    return (...args: any[]) => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => fn(...args), wait);
+    };
+  }, []);
+
+  // Debounced quantity sync to avoid spamming state on rapid taps
+  const debouncedUpdateQuantity = useRef(debounce((key: string, qty: number) => {
+    updateQuantity(key, qty);
+  }, 80)).current;
+
+  const handleVariationSelect = useCallback((product: Product, variation: ProductVariation) => {
+    // Update the product's current variation
+    (product as any).currentVariation = variation;
+    setShowVariationModal(false);
+  }, []);
+
+  const openVariationModal = useCallback((product: Product) => {
+    setSelectedProduct(product);
+    setShowVariationModal(true);
+  }, []);
+
+  if (!categoryData || categoryData.length === 0) {
+    return null;
+  }
+
+  // Define the specific order of categories to display (with aliases)
+  const categoryOrder = ["Bengali Special", "Fresh Fruits", "Fresh Vegetables"];
+
+  const categoryAliases: Record<string, string[]> = {
+    "Bengali Special": ["bengali special", "bengali"],
+    "Fresh Fruits": ["fresh fruits", "fruits", "fruit"],
+    "Fresh Vegetables": ["fresh vegetables", "vegetables", "veggies", "vegetable"],
+  };
+
+  const normalize = (val?: string) => (val || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+  // Build ordered categories using aliases; if not found, include empty section to show header
+  const orderedCategories = useMemo(() => {
+    const available = Array.isArray(categoryData) ? categoryData : [];
+
+    // Helper: normalize a product item to ensure groupId exists
+    const normalizeItems = (items?: any[]) =>
+      Array.isArray(items)
+        ? items.map((it) => ({ ...it, groupId: it?.groupId || it?.id }))
+        : [];
+
+    const result = categoryOrder.map((displayName) => {
+      const aliases = categoryAliases[displayName] || [displayName];
+      
+      // First, try to find exact matches
+      const exactMatch = available.find((cat) => {
+        const catName = normalize((cat as any)?.category);
+        const subName = normalize((cat as any)?.subcategory);
+        return aliases.some((alias) => {
+          const a = normalize(alias);
+          return catName === a || subName === a;
+        });
+      });
+
+      if (exactMatch) {
+        const normalizedItems = normalizeItems((exactMatch as any).items);
+        return {
+          category: displayName,
+          subcategory: (exactMatch as any)?.subcategory,
+          items: normalizedItems,
+        } as CategoryData;
+      }
+
+      // If no exact match, try partial matches but be more specific
+      const partialMatch = available.find((cat) => {
+        const catName = normalize((cat as any)?.category);
+        const subName = normalize((cat as any)?.subcategory);
+        return aliases.some((alias) => {
+          const a = normalize(alias);
+          // Only match if the category name starts with or contains the alias as a whole word
+          return catName.includes(a) || subName.includes(a);
+        });
+      });
+
+      if (partialMatch) {
+        const normalizedItems = normalizeItems((partialMatch as any).items);
+        return {
+          category: displayName,
+          subcategory: (partialMatch as any)?.subcategory,
+          items: normalizedItems,
+        } as CategoryData;
+      }
+
+      // If still no match, try to aggregate from multiple categories but be very specific
+      const aliasSet = new Set((categoryAliases[displayName] || [displayName]).map((a) => normalize(a)));
+      const aggregated: any[] = [];
+      
+      for (const cat of available) {
+        const catName = normalize((cat as any)?.category);
+        const subName = normalize((cat as any)?.subcategory);
+        
+        // Only include if it's a clear match and not already assigned to a higher priority category
+        const catMatches = [...aliasSet].some((a) => {
+          return catName.includes(a) || subName.includes(a);
+        });
+        
+        if (catMatches && Array.isArray((cat as any)?.items)) {
+          // Additional check: make sure this category hasn't been used by a higher priority section
+          const isUsedByHigherPriority = categoryOrder.slice(0, categoryOrder.indexOf(displayName)).some(priorityName => {
+            const priorityAliases = categoryAliases[priorityName] || [priorityName];
+            return priorityAliases.some(alias => {
+              const normalizedAlias = normalize(alias);
+              return catName.includes(normalizedAlias) || subName.includes(normalizedAlias);
+            });
+          });
+          
+          if (!isUsedByHigherPriority) {
+            aggregated.push(...normalizeItems((cat as any).items));
+          }
+        }
+      }
+
+      return { category: displayName, subcategory: "", items: aggregated } as CategoryData;
+    });
+
+    return result;
+  }, [categoryData]);
+
+  return (
+    <>
+      {orderedCategories.map((category, categoryIndex) => (
+        <View key={`${category.category}-${categoryIndex}`} style={{ marginBottom: 32 }}>
+          <Text
+            style={{
+              fontSize: 20,
+              fontFamily: "Inter_700Bold",
+              color: "#111827",
+              paddingHorizontal: 16,
+              marginBottom: 16,
+            }}
+          >
+            {category.category}
+          </Text>
+
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingLeft: 16 }}
+            data={Array.isArray(category.items) ? category.items : []}
+            keyExtractor={(it) => (it?.groupId || it?.id)}
+            renderItem={({ item }) => {
+              // Get the first available variation
+              const defaultVariation = item.variations?.[0];
+              const currentVariation = defaultVariation || {
+                id: item.groupId,
+                name: "1 unit",
+                price: 0,
+                mrp: 0,
+                unit: "unit",
+                quantity: 1,
+                availability: true,
+                inCart: false,
+                inWishlist: false,
+              };
+
+              // Check if the current variation is in stock
+              const isInStock = currentVariation?.availability === true && (currentVariation?.quantity > 0 || currentVariation?.stock_quantity > 0);
+              
+              // Get current quantity in cart for this product variation
+              const cartKey = `${item.groupId}-${currentVariation.id}`;
+              const cartItem = cartItems.get(cartKey);
+              const currentQuantity = cartItem?.quantity || 0;
+
+              // Handlers for this product (no hooks inside renderItem)
+              const handleAddToCart = async () => {
+                await addToCart(item.groupId, currentVariation.id, currentVariation);
+              };
+
+              const handleIncreaseQuantity = async () => {
+                if (currentQuantity === 0) {
+                  await addToCart(item.groupId, currentVariation.id, currentVariation);
+                } else {
+                  updateQuantity(cartKey, currentQuantity + 1);
+                }
+              };
+
+              const handleDecreaseQuantity = () => {
+                const next = currentQuantity > 1 ? currentQuantity - 1 : 0;
+                debouncedUpdateQuantity(cartKey, next);
+              };
+
+              const handleOpenVariationModal = () => {
+                openVariationModal(item);
+              };
+
+              const handleProductPress = () => {
+                router.push(`/(tabs)/product/${item.groupId}`);
+              };
+
+              return (
+                <ProductCard
+                  key={item.groupId}
+                  item={item}
+                  currentVariation={currentVariation}
+                  currentQuantity={currentQuantity}
+                  isInStock={isInStock}
+                  onAddToCart={handleAddToCart}
+                  onIncreaseQuantity={handleIncreaseQuantity}
+                  onDecreaseQuantity={handleDecreaseQuantity}
+                  onOpenVariationModal={handleOpenVariationModal}
+                  onProductPress={handleProductPress}
+                />
+              );
+            }}
+            getItemLayout={(data, index) => ({ length: 196, offset: 196 * index, index })}
+            initialNumToRender={6}
+            maxToRenderPerBatch={8}
+            windowSize={5}
+          />
         </View>
       ))}
 
@@ -569,4 +722,6 @@ export function CategoryProductsSection({ categoryData }: { categoryData: Catego
       </Modal>
     </>
   );
-}
+});
+
+export default CategoryProductsSection;

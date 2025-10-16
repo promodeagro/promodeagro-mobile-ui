@@ -9,7 +9,7 @@ import {
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ArrowRight, Grid3X3, Search, Sparkles } from "lucide-react-native";
+import { ArrowLeft, Grid3X3, Search, Sparkles } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -128,11 +128,18 @@ export default function CategoriesScreen() {
           elevation: 4,
         }}
       >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ position: 'absolute', left: 16, top: insets.top + 10, backgroundColor: '#111827', borderRadius: 16, padding: 6, opacity: 0.9 }}
+        >
+          <ArrowLeft size={16} color="#FFFFFF" />
+        </TouchableOpacity>
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
             marginBottom: 8,
+            marginLeft: 40
           }}
         >
           <View
@@ -362,7 +369,7 @@ export default function CategoriesScreen() {
                       borderColor: "#8B5CF6",
                     }}
                   >
-                    <ArrowRight size={20} color="#8B5CF6" />
+                    <ArrowLeft size={20} color="#8B5CF6" />
                   </View>
                 </View>
               </View>
@@ -480,7 +487,7 @@ export default function CategoriesScreen() {
                       borderColor: "#8B5CF6",
                     }}
                   >
-                    <ArrowRight size={16} color="#8B5CF6" />
+                    <ArrowLeft size={16} color="#8B5CF6" />
                   </View>
                 </View>
               </View>

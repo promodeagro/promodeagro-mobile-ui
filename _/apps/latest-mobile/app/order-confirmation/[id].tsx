@@ -6,6 +6,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar } from "expo-status-bar";
 import {
   Calendar,
@@ -28,6 +29,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { apiService } from "../../config/api";
 import { useSelector } from "react-redux";
+import { Image } from "expo-image";
 
 export default function OrderConfirmationScreen() {
   const [fontsLoaded] = useFonts({
@@ -106,6 +108,27 @@ export default function OrderConfirmationScreen() {
 
     fetchOrderDetails();
   }, [id, isAuthenticated, user?.id]);
+
+  // Keep status fresh while screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      let interval: any;
+      const refresh = async () => {
+        try {
+          const routeId = (id as string) || '';
+          if (!routeId) return;
+          const response = await apiService.getOrderById(encodeURIComponent(routeId));
+          if (response?.order) setOrder(response.order);
+          else if (response?.id) setOrder(response);
+        } catch {}
+      };
+      // initial refresh
+      refresh();
+      // poll every 10s
+      interval = setInterval(refresh, 10000);
+      return () => { if (interval) clearInterval(interval); };
+    }, [id])
+  );
 
   useEffect(() => {
     if (!loading && order) {
@@ -186,6 +209,22 @@ export default function OrderConfirmationScreen() {
     });
   };
 
+  // Map backend status -> UI
+  const getUiStatus = () => {
+    const raw = String(order?.status || order?.orderStatus || '').toLowerCase().trim();
+    const p = String(order?.paymentDetails?.status || order?.payment_status || '').toLowerCase().trim();
+    if (raw === 'delivered') return 'delivered';
+    if (raw === 'on the way' || raw === 'on_the_way' || raw === 'on-the-way') return 'out_for_delivery';
+    if (raw === 'packed') return 'packed';
+    if (raw === 'order processing' || raw === 'processing' || raw === 'processed' || raw === 'in process' || raw === 'in_process') return 'processing';
+    if (raw === 'order placed' || raw === 'placed' || raw === 'pending' || raw === 'created') return 'placed';
+    if (p === 'paid' || p === 'completed' || p === 'succeeded') return 'processing';
+    return 'placed';
+  };
+
+  const uiStatus = getUiStatus();
+  const statusChipText = uiStatus === 'delivered' ? 'Delivered' : uiStatus === 'out_for_delivery' ? 'Out for Delivery' : uiStatus === 'packed' ? 'Packed' : uiStatus === 'processing' ? 'Processing' : 'Order Placed';
+
   const deliveryTime = getEstimatedDeliveryTime();
 
   return (
@@ -251,7 +290,7 @@ export default function OrderConfirmationScreen() {
                 marginBottom: 8,
               }}
             >
-              Order Confirmed!
+              Order {statusChipText}
             </Text>
             <Text
               style={{
@@ -442,67 +481,64 @@ export default function OrderConfirmationScreen() {
 
           <View style={{ position: "relative" }}>
             {/* Timeline Steps */}
-            {[
-              { icon: CheckCircle, label: "Order Confirmed", status: "completed", time: "Now" },
-              { icon: Package, label: "Preparing Order", status: "current", time: "15 mins" },
-              { icon: Truck, label: "Out for Delivery", status: "pending", time: "45 mins" },
-              { icon: Home, label: "Delivered", status: "pending", time: deliveryTime.split(' at ')[1] },
-            ].map((step, index) => (
-              <View key={index} style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: step.status === "completed" ? "#10B981" : 
-                                   step.status === "current" ? "#F59E0B" : "#E5E7EB",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginRight: 16,
-                  }}
-                >
-                  <step.icon 
-                    size={20} 
-                    color={step.status === "pending" ? "#9CA3AF" : "#FFFFFF"} 
-                  />
-                </View>
-                
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontFamily: "Inter_600SemiBold",
-                      color: step.status === "pending" ? "#9CA3AF" : "#111827",
-                      marginBottom: 2,
-                    }}
-                  >
-                    {step.label}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontFamily: "Inter_400Regular",
-                      color: "#6B7280",
-                    }}
-                  >
-                    {step.time}
-                  </Text>
-                </View>
-                
-                {index < 3 && (
-                  <View
-                    style={{
-                      position: "absolute",
-                      left: 19,
-                      top: 40,
-                      width: 2,
-                      height: 30,
-                      backgroundColor: "#E5E7EB",
-                    }}
-                  />
-                )}
-              </View>
-            ))}
+            {(() => {
+              // steps: 0 placed, 1 processing, 2 out for delivery, 3 delivered
+              const steps = [
+                { icon: CheckCircle, label: "Order Placed" },
+                { icon: Package, label: "Preparing Order" },
+                { icon: Truck, label: "Out for Delivery" },
+                { icon: Home, label: "Delivered" },
+              ];
+              const currentIndex = uiStatus === 'delivered' ? 3 : uiStatus === 'out_for_delivery' ? 2 : uiStatus === 'processing' || uiStatus === 'packed' ? 1 : 0;
+              return steps.map((step, index) => {
+                const state = index < currentIndex ? 'completed' : index === currentIndex ? 'current' : 'pending';
+                return (
+                  <View key={index} style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
+                    <View
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        backgroundColor: state === "completed" ? "#10B981" : 
+                                       state === "current" ? "#F59E0B" : "#E5E7EB",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginRight: 16,
+                      }}
+                    >
+                      <step.icon 
+                        size={20} 
+                        color={state === "pending" ? "#9CA3AF" : "#FFFFFF"} 
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontFamily: "Inter_600SemiBold",
+                          color: state === "pending" ? "#9CA3AF" : "#111827",
+                          marginBottom: 2,
+                        }}
+                      >
+                        {step.label}
+                      </Text>
+                    </View>
+                    {index < 3 && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          left: 19,
+                          top: 40,
+                          width: 2,
+                          height: 30,
+                          backgroundColor: "#E5E7EB",
+                        }}
+                      />
+                    )}
+                  </View>
+                );
+              });
+            })()}
           </View>
         </Animated.View>
 
@@ -546,28 +582,34 @@ export default function OrderConfirmationScreen() {
                 borderBottomColor: "#F3F4F6",
               }}
             >
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontFamily: "Inter_600SemiBold",
-                    color: "#111827",
-                    marginBottom: 2,
-                  }}
-                >
-                  {item.productName}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontFamily: "Inter_400Regular",
-                    color: "#6B7280",
-                  }}
-                >
-                  {item.quantityUnits} {item.unit}
-                </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <Image
+                  source={{ uri: item.productImage || item.image || (item.product?.images?.[0] || '') }}
+                  style={{ width: 44, height: 44, borderRadius: 8, marginRight: 12 }}
+                  contentFit="cover"
+                />
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontFamily: "Inter_600SemiBold",
+                      color: "#111827",
+                      marginBottom: 2,
+                    }}
+                  >
+                    {item.productName}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontFamily: "Inter_400Regular",
+                      color: "#6B7280",
+                    }}
+                  >
+                    {item.quantityUnits} {item.unit}
+                  </Text>
+                </View>
               </View>
-              
               <View style={{ alignItems: "flex-end" }}>
                 <Text
                   style={{

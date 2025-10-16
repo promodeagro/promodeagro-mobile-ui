@@ -132,6 +132,26 @@ export default function OrdersScreen() {
     category => ["Bengali Special", "Fresh Fruits", "Fresh Vegetables"].includes(category.category)
   ) || [];
 
+  // Unified status mapping to tab keys
+  const getUiStatus = (order: any) => {
+    const raw = String(order?.status || order?.orderStatus || '').toLowerCase().trim();
+    const p = String(order?.paymentDetails?.status || order?.payment_status || '').toLowerCase().trim();
+
+    // Backend canonical statuses mapped to UI
+    if (raw === 'delivered') return 'delivered';
+    if (raw === 'on the way' || raw === 'on_the_way' || raw === 'on-the-way') return 'out_for_delivery';
+    if (raw === 'packed') return 'packed';
+    if (raw === 'order processing' || raw === 'processing' || raw === 'processed' || raw === 'in process' || raw === 'in_process') return 'confirmed';
+    if (raw === 'order placed' || raw === 'placed' || raw === 'pending' || raw === 'created') return 'pending';
+    if (raw === 'request for cancellation') return 'pending';
+    if (raw === 'cancel orders' || raw === 'cancelled' || raw === 'canceled') return 'pending';
+
+    // Payment status can lift to confirmed
+    if (p === 'paid' || p === 'completed' || p === 'succeeded') return 'confirmed';
+
+    return 'pending';
+  };
+
   // Fetch orders from API when user is authenticated and we have userId
   useEffect(() => {
     if (isAuthenticated && userId) {
@@ -147,9 +167,17 @@ export default function OrdersScreen() {
   // Refresh orders whenever this screen gains focus
   useFocusEffect(
     useCallback(() => {
+      let interval: any;
       if (isAuthenticated && userId) {
         fetchOrders();
+        // Poll every 10s while focused to reflect backend status changes
+        interval = setInterval(() => {
+          fetchOrders();
+        }, 10000);
       }
+      return () => {
+        if (interval) clearInterval(interval);
+      };
     }, [isAuthenticated, userId])
   );
 
@@ -176,9 +204,9 @@ export default function OrdersScreen() {
       console.log("Orders API response:", response);
       
       if (response.orders && Array.isArray(response.orders)) {
-        // Filter out unpaid online orders for production visibility
-        const visible = response.orders.filter(isOrderDisplayable);
-        setOrders(visible);
+        // Show ALL orders; sort newest first
+        const all = [...response.orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setOrders(all);
       } else {
         setOrders([]);
       }
@@ -474,16 +502,17 @@ export default function OrdersScreen() {
 
   const filteredOrders = orders.filter((order) => {
     if (activeTab === "all") return true;
-    return getDisplayStatus(order) === activeTab;
+    return getUiStatus(order) === activeTab;
   });
 
 
   const isOrderPaidOrConfirmed = (order: any) => isOrderDisplayable(order);
 
   const isOnlineAndUnpaid = (order: any) => {
-    const method = getPaymentMethod(order);
-    if (method === 'cash' || method === 'cod' || method === 'cod-prepared') return false;
-    return !isOrderDisplayable(order);
+    const paid = (order?.paymentDetails?.status || '').toLowerCase();
+    const method = (order?.paymentDetails?.method || '').toLowerCase();
+    const ui = getUiStatus(order);
+    return (method !== 'cash' && method !== 'cod' && method !== 'cod-prepared') && paid !== 'paid' && paid !== 'completed' && paid !== 'succeeded' && ui === 'pending';
   };
 
   const verifyOrderPaid = async (orderId: string) => {
@@ -575,7 +604,7 @@ export default function OrdersScreen() {
   };
 
   const OrderCard = ({ order }: { order: any }) => {
-    const displayStatus = getDisplayStatus(order);
+    const displayStatus = getUiStatus(order);
     return (
     <TouchableOpacity
       onPress={() => router.push(`/order-confirmation/${order.id}`)}
@@ -772,7 +801,7 @@ export default function OrdersScreen() {
       {/* Quick Actions */}
       <View style={{ flexDirection: "row", gap: 8 }}>
         <TouchableOpacity
-          onPress={() => handleViewDetails(order)}
+          onPress={() => router.push(`/order-confirmation/${order.id}`)}
           style={{
             flex: 1,
             backgroundColor: "#F8FAFC",
@@ -818,7 +847,7 @@ export default function OrdersScreen() {
           </TouchableOpacity>
         )}
 
-        {canModifyOrder(order) && (
+        {getUiStatus(order) === 'pending' && canModifyOrder(order) && (
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
@@ -849,7 +878,7 @@ export default function OrdersScreen() {
           </TouchableOpacity>
         )}
 
-        {canCancelOrder(order) && (
+        {getUiStatus(order) === 'pending' && canCancelOrder(order) && (
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
@@ -987,23 +1016,22 @@ export default function OrdersScreen() {
             {
               key: "pending",
               label: "Pending",
-              count: orders.filter((o) => getDisplayStatus(o) === "pending").length,
+              count: orders.filter((o) => getUiStatus(o) === "pending").length,
             },
             {
               key: "confirmed",
               label: "Confirmed",
-              count: orders.filter((o) => getDisplayStatus(o) === "confirmed").length,
+              count: orders.filter((o) => getUiStatus(o) === "confirmed").length,
             },
             {
               key: "out_for_delivery",
               label: "In Transit",
-              count: orders.filter((o) => getDisplayStatus(o) === "out_for_delivery")
-                .length,
+              count: orders.filter((o) => getUiStatus(o) === "out_for_delivery").length,
             },
             {
               key: "delivered",
               label: "Delivered",
-              count: orders.filter((o) => getDisplayStatus(o) === "delivered").length,
+              count: orders.filter((o) => getUiStatus(o) === "delivered").length,
             },
           ].map((tab) => (
             <TouchableOpacity

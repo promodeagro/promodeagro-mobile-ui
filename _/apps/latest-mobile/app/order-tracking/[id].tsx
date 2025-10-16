@@ -4,6 +4,7 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "rea
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, Home, MapPin, Package, Phone, Truck, User } from "lucide-react-native";
 import { apiService } from "../../config/api";
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function OrderTrackingScreen() {
   const { id } = useLocalSearchParams();
@@ -34,12 +35,29 @@ export default function OrderTrackingScreen() {
     fetchOrder();
   }, [id]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      let interval: any;
+      const refresh = async () => {
+        try {
+          if (!id) return;
+          const res = await apiService.getOrderById(id as string);
+          if (res?.order) setOrder(res.order);
+        } catch {}
+      };
+      refresh();
+      interval = setInterval(refresh, 10000);
+      return () => { if (interval) clearInterval(interval); };
+    }, [id])
+  );
+
   const statusToLabel = (status: string) => {
     const s = (status || "").toLowerCase();
-    if (s.includes("placed") || s.includes("confirmed")) return "Order Placed";
-    if (s.includes("process") || s.includes("preparing") || s.includes("packed")) return "In Process";
-    if (s.includes("out for delivery") || s.includes("transit")) return "Out for Delivery";
-    if (s.includes("delivered") || s.includes("completed")) return "Delivered";
+    if (s.includes("delivered")) return "Delivered";
+    if (s.includes("on the way") || s.includes("out for delivery") || s.includes("transit")) return "Out for Delivery";
+    if (s.includes("packed")) return "In Process";
+    if (s.includes("order processing") || s.includes("processing") || s.includes("processed") || s.includes("in process")) return "In Process";
+    if (s.includes("order placed") || s.includes("placed") || s.includes("pending") || s.includes("created")) return "Order Placed";
     return "Order Placed";
   };
 

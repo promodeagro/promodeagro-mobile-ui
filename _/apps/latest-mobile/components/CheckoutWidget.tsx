@@ -23,13 +23,13 @@ export default function CheckoutWidget({ itemCount = 0, totalAmount = 0, visible
   }
 
   const handleViewCart = () => {
-    router.push("/(tabs)/cart");
+    router.push("/checkout");
   };
 
   const handleCheckout = () => {
     // Navigate to checkout screen
     console.log("Proceeding to checkout");
-    router.push("/(tabs)/checkout");
+    router.push("/checkout");
   };
 
   return (
@@ -96,7 +96,7 @@ export default function CheckoutWidget({ itemCount = 0, totalAmount = 0, visible
               color: "#D1D5DB",
             }}
           >
-            {itemCount} {itemCount === 1 ? "item" : "items"} • ₹{totalAmount}
+            {itemCount} {itemCount === 1 ? "item" : "items"} • Subtotal ₹{totalAmount}
           </Text>
         </View>
       </TouchableOpacity>
@@ -122,5 +122,5 @@ export default function CheckoutWidget({ itemCount = 0, totalAmount = 0, visible
         </Text>
       </TouchableOpacity>
     </View>
-  );``
+  );
 }

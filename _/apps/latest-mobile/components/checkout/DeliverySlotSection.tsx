@@ -142,7 +142,7 @@ export function DeliverySlotSection({
       >
         {deliverySlots?.map((slot) => (
           <DeliverySlotCard
-            key={slot.id}
+            key={`${slot.id}-${slot?.time || ''}-${slot?.date || ''}`}
             slot={slot}
             isSelected={selectedDeliverySlot?.id === slot.id}
             onSelect={() => onSelectSlot(slot)}

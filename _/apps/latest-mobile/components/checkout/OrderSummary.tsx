@@ -131,7 +131,7 @@ export function OrderSummary({
                 {item.product?.name || "Product"}
               </Text>
 
-              {item.variation && (
+              {item?.variation && typeof item.variation === "object" && (
                 <Text
                   style={{
                     fontSize: 12,
@@ -162,7 +162,7 @@ export function OrderSummary({
                     >
                       {`${formatPrice(item.variation?.price ?? item.product?.price ?? 0)} × ${item.quantity ?? 1}`}
                     </Text>
-                    {item.variation?.mrp && item.variation.mrp > item.variation.price && (
+                    {typeof item.variation?.mrp === "number" && item.variation.mrp > (item.variation.price ?? 0) && (
                       <Text
                         style={{
                           fontSize: 10,
@@ -176,7 +176,7 @@ export function OrderSummary({
                       </Text>
                     )}
                   </View>
-                  {item.variation?.savings && item.variation.savings > 0 && (
+                  {(item.variation?.savings ?? 0) > 0 && (
                     <Text
                       style={{
                         fontSize: 10,

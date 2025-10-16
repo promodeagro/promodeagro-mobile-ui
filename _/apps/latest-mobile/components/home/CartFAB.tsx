@@ -8,11 +8,11 @@ export function CartFAB() {
   const insets = useSafeAreaInsets();
 
   const handleViewCart = () => {
-    router.push("/(tabs)/cart");
+    router.push("/checkout");
   };
 
   const handleCheckout = () => {
-    router.push("/(tabs)/checkout");
+    router.push("/checkout");
   };
 
   return (

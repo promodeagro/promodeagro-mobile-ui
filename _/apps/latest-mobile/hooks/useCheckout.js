@@ -17,23 +17,114 @@ export function useCheckout() {
   const { selectedAddress } = useSelector((state) => state.address);
   const userId = user?.id || user?.userId;
   
-  // Get cart functions
-  const { clearCart } = useCart();
+  // Get cart functions and local cart state
+  const { clearCart, cartItems: localCartMap, totalAmount: localTotalAmount } = useCart();
   const appStateRef = useRef(AppState.currentState);
   const pendingOrderIdRef = useRef(null);
+  const navigationDoneRef = useRef(false);
+  const pollingInFlightRef = useRef(false);
 
   // Helper: verify payment for a pending order and navigate if paid
   const verifyPendingPayment = async () => {
     try {
-      if (!pendingOrderIdRef.current) return false;
-      const latest = await apiService.getOrderById(pendingOrderIdRef.current);
-      const paid = latest?.payment_status === 'completed' || latest?.status === 'confirmed' || latest?.status === 'paid';
+      if (!pendingOrderIdRef.current) {
+        console.log('No pending order ID to verify');
+        return false;
+      }
+      
+      console.log('Verifying payment for order:', pendingOrderIdRef.current);
+      
+      // If it's a temporary ID, try to find the most recent order for this user
+      if (pendingOrderIdRef.current.startsWith('temp_')) {
+        console.log('Temporary order ID detected, checking recent orders...');
+        try {
+          const recentOrders = await apiService.getOrdersByUserId(userId);
+          console.log('Recent orders:', recentOrders);
+          
+          if (recentOrders.orders && recentOrders.orders.length > 0) {
+            // Find the most recent order (assuming it's the one we just created)
+            const mostRecentOrder = recentOrders.orders[0];
+            console.log('Most recent order:', mostRecentOrder);
+            
+            const paid = mostRecentOrder?.payment_status === 'completed' || 
+                         mostRecentOrder?.status === 'confirmed' || 
+                         mostRecentOrder?.status === 'paid' ||
+                         mostRecentOrder?.payment_status === 'paid' ||
+                         mostRecentOrder?.paymentDetails?.status === 'PAID' ||
+                         mostRecentOrder?.paymentDetails?.status === 'paid' ||
+                         mostRecentOrder?.paymentDetails?.status === 'completed';
+                         
+            console.log('Recent order payment status check:', {
+              payment_status: mostRecentOrder?.payment_status,
+              status: mostRecentOrder?.status,
+              paymentDetails_status: mostRecentOrder?.paymentDetails?.status,
+              paid: paid
+            });
+                         
+            if (paid) {
+              if (!navigationDoneRef.current) {
+                console.log('Payment confirmed via recent orders! Navigating to order confirmation...');
+                navigationDoneRef.current = true;
+                clearCart();
+                router.replace(`/order-confirmation/${mostRecentOrder.id}`);
+              }
+              pendingOrderIdRef.current = null;
+              return true;
+            }
+          }
+        } catch (orderError) {
+          console.warn('Failed to fetch recent orders:', orderError);
+        }
+        
+        // If we can't verify, show alert to check orders
+        Alert.alert(
+          'Payment Status Unknown', 
+          'We cannot verify your payment status automatically. Please check your orders page to see if your order was successful.',
+          [
+            {
+              text: 'Check Orders',
+              onPress: () => {
+                clearCart();
+                router.replace('/(tabs)/orders');
+                pendingOrderIdRef.current = null;
+              }
+            }
+          ]
+        );
+        return true;
+      }
+      
+      const latestResponse = await apiService.getOrderById(pendingOrderIdRef.current);
+      const latest = latestResponse?.order || latestResponse;
+      console.log('Order status response:', latestResponse);
+      
+      const paid = latest?.payment_status === 'completed' || 
+                   latest?.status === 'confirmed' || 
+                   latest?.status === 'paid' ||
+                   latest?.payment_status === 'paid' ||
+                   latest?.paymentDetails?.status === 'PAID' ||
+                   latest?.paymentDetails?.status === 'paid' ||
+                   latest?.paymentDetails?.status === 'completed';
+                   
+      console.log('Payment status check:', {
+        payment_status: latest?.payment_status,
+        status: latest?.status,
+        paymentDetails_status: latest?.paymentDetails?.status,
+        paid: paid
+      });
+      
       if (paid) {
-        clearCart();
-        router.replace(`/order-confirmation/${pendingOrderIdRef.current}`);
+        if (!navigationDoneRef.current) {
+          console.log('Payment confirmed! Navigating to order confirmation...');
+          navigationDoneRef.current = true;
+          clearCart();
+          router.replace(`/order-confirmation/${pendingOrderIdRef.current}`);
+        }
         pendingOrderIdRef.current = null;
         return true;
       }
+      
+      console.log('Payment not yet confirmed');
       return false;
     } catch (e) {
       console.warn('Payment verification failed:', e?.message || e);
@@ -42,12 +133,33 @@ export function useCheckout() {
   };
 
   // Helper: poll server a few times to catch delayed PSP notifications
-  const pollPaymentStatus = async (attempts = 6, intervalMs = 4000) => {
-    for (let i = 0; i < attempts; i++) {
-      const ok = await verifyPendingPayment();
-      if (ok) return true;
-      await new Promise(res => setTimeout(res, intervalMs));
+  const pollPaymentStatus = async (attempts = 10, intervalMs = 2000) => {
+    if (navigationDoneRef.current || !pendingOrderIdRef.current) {
+      return true;
     }
+    if (pollingInFlightRef.current) {
+      return false;
+    }
+    pollingInFlightRef.current = true;
+    console.log(`Starting payment polling: ${attempts} attempts, ${intervalMs}ms intervals`);
+    for (let i = 0; i < attempts; i++) {
+      if (navigationDoneRef.current || !pendingOrderIdRef.current) {
+        pollingInFlightRef.current = false;
+        return true;
+      }
+      console.log(`Payment poll attempt ${i + 1}/${attempts}`);
+      const ok = await verifyPendingPayment();
+      if (ok || navigationDoneRef.current) {
+        console.log('Payment confirmed via polling!');
+        pollingInFlightRef.current = false;
+        return true;
+      }
+      if (i < attempts - 1) {
+        await new Promise(res => setTimeout(res, intervalMs));
+      }
+    }
+    console.log('Payment polling completed without confirmation');
+    pollingInFlightRef.current = false;
     return false;
   };
 
@@ -73,6 +185,21 @@ export function useCheckout() {
       fetchCartData();
     }
   }, [isAuthenticated, userId]);
+
+  // Check for pending payment verification when component mounts
+  useEffect(() => {
+    if (pendingOrderIdRef.current) {
+      console.log('Checking for pending payment on mount...');
+      verifyPendingPayment();
+    }
+  }, []);
+
+  // Cleanup AppState listener on unmount
+  useEffect(() => {
+    return () => {
+      AppState.removeEventListener?.('change', () => {});
+    };
+  }, []);
 
   // Fetch cart data and delivery slots when selected address changes
   useEffect(() => {
@@ -243,7 +370,71 @@ export function useCheckout() {
     }
   } : null;
 
+  // Build a local-cart fallback (shown when server cart is empty/unavailable)
+  const localCartItems = Array.from(localCartMap?.values?.() || []).map((ci) => ({
+    id: `${ci.product?.id}-${ci.product?.variationId || 'default'}`,
+    cartKey: `${ci.product?.id}-${ci.product?.variationId || 'default'}`,
+    quantity: Number(ci.quantity || 1),
+    product: {
+      id: ci.product?.id,
+      name: ci.product?.name,
+      images: ci.product?.images || [],
+      price: Number(ci.product?.price || 0),
+      category: ci.product?.category,
+      variationId: ci.product?.variationId,
+    },
+    variation: {
+      name: ci.product?.variation,
+      price: Number(ci.product?.price || 0),
+      mrp: 0,
+    },
+  }));
 
+  const hasLocalItems = (localCartItems && localCartItems.length > 0);
+  const hasServerItems = (transformedCartData?.items && transformedCartData.items.length > 0);
+
+  // Prefer local items if user has added anything this session; otherwise use server cart
+  const mergedCartItems = hasLocalItems ? localCartItems : (hasServerItems ? transformedCartData.items : []);
+
+  // Calculate delivery charges based on subtotal and pincode when using local cart
+  const calculateDeliveryCharges = (subtotal) => {
+    const pincode = String(selectedAddress?.zipCode || selectedAddress?.zip || selectedAddress?.pincode || '').trim();
+
+    // Group A: specific pincodes - free >= 100, else 20
+    // NOTE: Add other 3 pincodes here as business config when available
+    const groupAPincodes = new Set(['500091']);
+
+    if (groupAPincodes.has(pincode)) {
+      return subtotal >= 100 ? 0 : 20;
+    }
+
+    // Group B (all other pincodes): free >= 300, else 50
+    return subtotal >= 300 ? 0 : 50;
+  };
+
+  const mergedSummary = hasLocalItems
+    ? {
+        totalAmount: Number(localTotalAmount || 0),
+        subtotal: Number(localTotalAmount || 0),
+        savings: 0,
+        // When using local items, estimate delivery using pincode logic above
+        deliveryCharges: calculateDeliveryCharges(Number(localTotalAmount || 0)),
+        chargestag: undefined,
+      }
+    : (hasServerItems ? transformedCartData.summary : {
+        totalAmount: 0,
+        subtotal: 0,
+        savings: 0,
+        deliveryCharges: 0,
+        chargestag: undefined,
+      });
+
+  // Expose normalized billing values to consumers
+  const subtotal = mergedSummary?.subtotal || 0;
+  const deliveryFee = mergedSummary?.deliveryCharges || 0;
+  const savings = mergedSummary?.savings || 0;
+  const discount = Number(appliedCoupon?.discount_value || 0);
+  const total = (mergedSummary?.totalAmount ?? (subtotal + deliveryFee - discount));
 
   // Auto-select the first delivery slot if none is selected
   useEffect(() => {
@@ -273,6 +464,26 @@ export function useCheckout() {
 
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
+  // Manual payment verification function
+  const verifyPaymentManually = async () => {
+    if (!pendingOrderIdRef.current) {
+      Alert.alert('No Pending Payment', 'No pending payment to verify.');
+      return false;
+    }
+    
+    try {
+      const paid = await verifyPendingPayment();
+      if (!paid) {
+        Alert.alert('Payment Pending', 'Payment not yet confirmed. Please wait a moment or check your payment app.');
+      }
+      return paid;
+    } catch (error) {
+      console.error('Manual payment verification failed:', error);
+      Alert.alert('Verification Error', 'Failed to verify payment. Please try again.');
+      return false;
+    }
+  };
+
   const placeOrderMutation = {
     mutate: async () => {
       console.log("=== ORDER PLACEMENT DEBUG ===");
@@ -281,6 +492,7 @@ export function useCheckout() {
       console.log("selectedPaymentMethod:", selectedPaymentMethod);
       console.log("cartData:", cartData);
       console.log("cartData?.items:", cartData?.items);
+      console.log("mergedCartItems (ui items):", mergedCartItems);
       
       if (!selectedAddress) {
         console.log("ERROR: No address selected");
@@ -292,7 +504,7 @@ export function useCheckout() {
         Alert.alert("Error", "Please select a delivery slot");
         return;
       }
-      if (!cartData?.items || cartData.items.length === 0) {
+      if (!mergedCartItems || mergedCartItems.length === 0) {
         console.log("ERROR: Cart is empty");
         Alert.alert("Error", "Your cart is empty");
         return;
@@ -301,15 +513,30 @@ export function useCheckout() {
       try {
         setIsPlacingOrder(true);
         
+        // Build items from the same source used by UI (prefers local when present)
+        const uiBasedItems = mergedCartItems.map((it) => {
+          const cartKeyLikeId = (typeof it?.id === 'string' ? it.id : '') || '';
+          const productId = String(it?.product?.id || '').trim();
+          const variationId = String(it?.product?.variationId || '').trim();
+          let pid = variationId || null;
+          if (!pid && cartKeyLikeId.includes('-')) {
+            const parts = cartKeyLikeId.split('-');
+            const last = parts[parts.length - 1];
+            if (last && last !== 'default') pid = last;
+          }
+          if (!pid) pid = productId; // final fallback
+          return {
+            productId: pid,
+            quantity: Number(it?.quantity || 1),
+            quantityUnits: (it?.variation?.name) || (it?.product?.variation) || '1 Pcs',
+          };
+        }).filter((x) => !!x.productId && x.productId !== 'default');
+        
         // Prepare order payload with real user ID
         const orderPayload = {
           addressId: selectedAddress?.id,
           deliverySlotId: selectedDeliverySlot?.slotData?.id,
-          items: cartData.items.map(item => ({
-            productId: item.ProductId,
-            quantity: item.Quantity,
-            quantityUnits: item.QuantityUnits
-          })),
+          items: uiBasedItems,
           paymentDetails: {
             method: selectedPaymentMethod === "cod" ? (selectedSubOption === "cod-prepared" ? "prepared" : "cash") : selectedPaymentMethod
           },
@@ -339,27 +566,83 @@ export function useCheckout() {
             const isFinalReceipt = typeof payUrl === 'string' && payUrl.includes('/mycart/address/order-placed/');
 
             // Save orderId for verification on return
-            const createdOrderId = orderResponse.orderId || orderResponse.id;
-            pendingOrderIdRef.current = createdOrderId || null;
+            const createdOrderId = orderResponse.orderId || orderResponse.id || orderResponse.order_id;
+            console.log('Extracted order ID for payment verification:', createdOrderId);
+            
+            // If no order ID in response, try to extract from payment link or use a temporary ID
+            if (!createdOrderId) {
+              console.warn('No order ID found in API response, trying to extract from payment link...');
+              
+              // Try multiple patterns to extract order ID from payment link
+              const orderIdPatterns = [
+                /order[_-]?id[=:]([a-f0-9-]+)/i,
+                /order[=:]([a-f0-9-]+)/i,
+                /\/([a-f0-9-]{8,})\//i,
+                /order[_-]?id[=:]([0-9-]+)/i,
+                /order[=:]([0-9-]+)/i,
+                /\/([0-9-]{8,})\//i
+              ];
+              
+              let extractedOrderId = null;
+              for (const pattern of orderIdPatterns) {
+                const match = payUrl.match(pattern);
+                if (match && match[1]) {
+                  extractedOrderId = match[1];
+                  console.log('Extracted order ID from payment link using pattern:', pattern, '->', extractedOrderId);
+                  break;
+                }
+              }
+              
+              if (extractedOrderId) {
+                pendingOrderIdRef.current = extractedOrderId;
+                console.log('Using extracted order ID for tracking:', extractedOrderId);
+              } else {
+                // Last resort: try to extract any numeric ID from the URL
+                const numericMatch = payUrl.match(/([0-9]{6,})/);
+                if (numericMatch) {
+                  pendingOrderIdRef.current = numericMatch[1];
+                  console.log('Using numeric ID from payment link:', numericMatch[1]);
+                } else {
+                  const tempOrderId = `temp_${userId}_${Date.now()}`;
+                  pendingOrderIdRef.current = tempOrderId;
+                  console.log('Using temporary order ID for tracking:', tempOrderId);
+                }
+              }
+            } else {
+              pendingOrderIdRef.current = createdOrderId;
+            }
+
+            // If we still don't have a real order ID, try to fetch the most recent order
+            if (pendingOrderIdRef.current && pendingOrderIdRef.current.startsWith('temp_')) {
+              console.log('Attempting to fetch real order ID from recent orders...');
+              try {
+                const recentOrders = await apiService.getOrdersByUserId(userId);
+                if (recentOrders.orders && recentOrders.orders.length > 0) {
+                  const mostRecentOrder = recentOrders.orders[0];
+                  console.log('Found most recent order with ID:', mostRecentOrder.id);
+                  pendingOrderIdRef.current = mostRecentOrder.id;
+                  console.log('Updated pending order ID to real ID:', pendingOrderIdRef.current);
+                }
+              } catch (error) {
+                console.warn('Failed to fetch recent orders for real order ID:', error);
+              }
+            }
 
             // Attach AppState listener to verify payment status when app comes to foreground
             const onAppStateChange = async (nextState) => {
+              console.log('App state changed from', appStateRef.current, 'to', nextState);
               if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
                 try {
                   if (pendingOrderIdRef.current) {
-                    console.log('Verifying payment status for order:', pendingOrderIdRef.current);
-                    const latest = await apiService.getOrderById(pendingOrderIdRef.current);
-                    const paid = latest?.payment_status === 'completed' || latest?.status === 'confirmed' || latest?.status === 'paid';
-                    if (paid) {
-                      clearCart();
-                      router.replace(`/order-confirmation/${pendingOrderIdRef.current}`);
-                      pendingOrderIdRef.current = null;
-                    } else {
-                      Alert.alert('Payment Pending', 'Payment not confirmed. If you paid, please wait a moment or try again from Orders.');
+                    console.log('App returned to foreground, verifying payment for order:', pendingOrderIdRef.current);
+                    const paid = await verifyPendingPayment();
+                    if (!paid && !navigationDoneRef.current) {
+                      console.log('Payment not confirmed on app return, starting polling...');
+                      setTimeout(() => { if (!navigationDoneRef.current) { pollPaymentStatus(); } }, 1000);
                     }
                 }
                 } catch (verifyErr) {
-                  console.warn('Payment verification failed:', verifyErr?.message || verifyErr);
+                  console.warn('Payment verification failed on app state change:', verifyErr?.message || verifyErr);
                 }
               }
               appStateRef.current = nextState;
@@ -379,8 +662,20 @@ export function useCheckout() {
               console.log('Opening in-app browser with redirectUrl:', redirectUrl);
               const result = await WebBrowser.openAuthSessionAsync(payUrl, redirectUrl);
               console.log('AuthSession result:', result?.type);
-              // After user dismisses/returns, start polling server
-              setTimeout(() => { pollPaymentStatus(); }, 1500);
+              
+              // If user completed payment (not dismissed), show success and redirect
+              if (result?.type === 'success' || result?.type === 'dismiss') {
+                console.log('Payment session completed, starting verification...');
+                // Do not clear pendingOrderId; start polling to confirm
+                if (!navigationDoneRef.current) {
+                  setTimeout(() => { if (!navigationDoneRef.current) { pollPaymentStatus(); } }, 1000);
+                }
+              } else {
+                // Start polling as fallback
+                if (!navigationDoneRef.current) {
+                  setTimeout(() => { if (!navigationDoneRef.current) { pollPaymentStatus(); } }, 1500);
+                }
+              }
             } else {
               // Do not redirect to external receipt page; keep user in app and rely on verification
               console.log('Skipping external receipt URL to keep user in app');
@@ -424,18 +719,7 @@ export function useCheckout() {
     isPending: isPlacingOrder
   };
 
-  const cartItems = transformedCartData?.items || [];
-  const subtotal = transformedCartData?.summary?.subtotal || 0;
-  const deliveryFee = transformedCartData?.summary?.deliveryCharges || 0;
-  const savings = transformedCartData?.summary?.savings || 0;
-  const discount = appliedCoupon
-    ? Math.min(
-        (subtotal * appliedCoupon.discount_value) / 100,
-        appliedCoupon.max_discount_amount || subtotal,
-      )
-    : 0;
-  const total = transformedCartData?.summary?.totalAmount || (subtotal + deliveryFee - discount);
-
+  const cartItems = mergedCartItems || [];
   const isLoading = addressesLoading || cartLoading || slotsLoading;
 
   return {
@@ -462,8 +746,10 @@ export function useCheckout() {
     setAppliedCoupon,
     applyCouponMutation,
     placeOrderMutation,
+    verifyPaymentManually,
     isLoading,
     cartData: transformedCartData,
     chargestag: transformedCartData?.summary?.chargestag,
+    hasPendingPayment: !!pendingOrderIdRef.current,
   };
 }

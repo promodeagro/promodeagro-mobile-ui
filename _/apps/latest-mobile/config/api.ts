@@ -163,7 +163,12 @@ export const apiService = {
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        let errorText = '';
+        try {
+          errorText = await response.text();
+        } catch {}
+        console.error('AddCartItems failed:', response.status, errorText);
+        throw new Error(`HTTP error! status: ${response.status}${errorText ? ` - ${errorText}` : ''}`);
       }
       const data = await response.json();
       return data;

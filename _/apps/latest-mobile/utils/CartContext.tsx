@@ -8,6 +8,8 @@ interface CartItem {
     price: number;
     variation: string;
     variationId?: string;
+    name?: string;
+    images?: string[];
   };
   quantity: number;
 }
@@ -18,6 +20,7 @@ interface CartContextType {
   removeFromCart: (cartKey: string) => void;
   updateQuantity: (cartKey: string, quantity: number) => void;
   clearCart: () => void;
+  replaceCart: (items: Array<{ productId: string; variationId?: string; price: number; quantity: number; name?: string; image?: string }>) => void;
   totalItems: number;
   totalAmount: number;
 }
@@ -44,7 +47,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const userId = user?.id || user?.userId;
 
   const addToCart = async (productId: string, variationId: string, variationData: any) => {
-    const cartKey = `${productId}-${variationId || "default"}`;
+    const effectiveVariationId = variationId || productId; // avoid 'default' ids
+    const cartKey = `${productId}-${effectiveVariationId}`;
 
     // Update local state first for immediate UI feedback
     setCartItems((prev) => {
@@ -62,7 +66,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
             id: productId,
             price: variationData?.price || variationData.price,
             variation: variationData?.name || variationData.unit || "1 unit",
-            variationId: variationId,
+            variationId: effectiveVariationId,
+            name: undefined,
+            images: (variationData?.image || (variationData?.images && variationData.images[0])) ? [variationData?.image || variationData?.images?.[0]] : undefined,
           },
           quantity: 1,
         });
@@ -76,9 +82,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       try {
         console.log('Adding cart item for user ID:', userId);
         const cartItems = [{
-          productId: variationId, // Using variationId as productId for the API
+          // Backend expects variationId as productId based on error message
+          productId: effectiveVariationId,
           quantity: 1,
-          quantityUnits: variationData?.unit || "1 Pcs"
+          // Prefer explicit unit/name fields from variation data
+          quantityUnits: variationData?.quantityUnits || variationData?.unit || variationData?.name || "1 Pcs"
         }];
         
         await apiService.addCartItems(userId, cartItems);
@@ -123,6 +131,27 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setCartItems(new Map());
   };
 
+  const replaceCart = (items: Array<{ productId: string; variationId?: string; price: number; quantity: number; name?: string; image?: string }>) => {
+    setCartItems(() => {
+      const next = new Map<string, CartItem>();
+      for (const it of items) {
+        const key = `${it.productId}-${it.variationId || 'default'}`;
+        next.set(key, {
+          product: {
+            id: it.productId,
+            variation: it.name || '1 unit',
+            variationId: it.variationId,
+            price: it.price,
+            name: it.name,
+            images: it.image ? [it.image] : undefined,
+          },
+          quantity: Math.max(0, Number(it.quantity || 0)),
+        });
+      }
+      return next;
+    });
+  };
+
   const cartItemsArray = Array.from(cartItems.values());
   const totalItems = cartItemsArray.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = cartItemsArray.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
@@ -133,6 +162,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     removeFromCart,
     updateQuantity,
     clearCart,
+    replaceCart,
     totalItems,
     totalAmount,
   };

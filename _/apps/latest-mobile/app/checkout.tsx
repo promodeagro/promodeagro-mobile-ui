@@ -25,6 +25,7 @@ import { AddressModal, AddressInput } from "../components/checkout/AddressModal"
 import { PaymentOptions, PaymentMethod } from "../components/checkout/PaymentOptions";
 import { PlaceOrderButton } from "../components/checkout/PlaceOrderButton";
 import { useCheckout } from "../hooks/useCheckout";
+import { useCart } from "../utils/CartContext";
 
 export default function CheckoutScreen() {
   const [fontsLoaded] = useFonts({
@@ -65,6 +66,8 @@ export default function CheckoutScreen() {
     setAppliedCoupon,
     applyCouponMutation,
     placeOrderMutation,
+    verifyPaymentManually,
+    hasPendingPayment,
     isLoading,
     chargestag,
   } = useCheckout();
@@ -73,15 +76,19 @@ export default function CheckoutScreen() {
   const [addressModalVisible, setAddressModalVisible] = useState(false);
   const [localPayment, setLocalPayment] = useState<PaymentMethod>("cod");
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const { replaceCart } = useCart();
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const lineItems = (cartItems || []).map((it) => ({
     id: it.id,
     quantity: Number(it.quantity || 1),
     product: {
+      id: it.product?.id,
       name: it.product?.name,
       images: it.product?.images,
       price: Number(it.product?.price || it.variation?.price || 0),
       category: it.product?.category,
+      variationId: (it as any)?.product?.variationId,
     },
     variation: {
       name: it.variation?.name,
@@ -114,24 +121,22 @@ export default function CheckoutScreen() {
   const handleIncrease = (idx: number) => {
     console.log('++ increase item idx', idx);
     setHasUserEdited(true);
-    setEditableItems((prev) => prev.map((it, i) => i === idx ? { ...it, quantity: (it.quantity || 1) + 1 } : it));
+    const target = editableItems[idx];
+    const nextQty = (target?.quantity || 1) + 1;
+    setEditableItems((prev) => prev.map((it, i) => i === idx ? { ...it, quantity: nextQty } : it));
   };
   const handleDecrease = (idx: number) => {
     console.log('-- decrease item idx', idx);
     setHasUserEdited(true);
-    setEditableItems((prev) => {
-      const next = [...prev];
-      const target = next[idx];
-      if (!target) return prev;
-      const currentQty = Number(target.quantity || 1);
-      if (currentQty <= 1) {
-        // Remove the item instead of showing 0
-        next.splice(idx, 1);
-        return next;
-      }
-      next[idx] = { ...target, quantity: currentQty - 1 };
-      return next;
-    });
+    const target = editableItems[idx];
+    if (!target) return;
+    const currentQty = Number(target.quantity || 1);
+    if (currentQty <= 1) {
+      setEditableItems((prev) => prev.filter((_, i) => i !== idx));
+      return;
+    }
+    const nextQty = currentQty - 1;
+    setEditableItems((prev) => prev.map((it, i) => i === idx ? { ...it, quantity: nextQty } : it));
   };
   const handleRemove = (idx: number) => {
     console.log('xx remove item idx', idx);
@@ -140,7 +145,29 @@ export default function CheckoutScreen() {
   };
 
   const editedSubtotal = editableItems.reduce((sum, it) => sum + ((it.variation?.price || it.product?.price || 0) * (it.quantity || 1)), 0);
-  const editedTotal = editedSubtotal + deliveryFee - discount;
+  // Use delivery fee from hook (backend-calculated based on pincode rules)
+  const calculatedDeliveryFee = Number(deliveryFee ?? 0);
+  const editedTotal = editedSubtotal + calculatedDeliveryFee - discount;
+
+  // Keep global cart aligned with editableItems after user-edit changes (debounced)
+  useEffect(() => {
+    if (!hasUserEdited) return;
+    if (syncTimer.current) clearTimeout(syncTimer.current);
+    syncTimer.current = setTimeout(() => {
+      const next = editableItems.map((it) => ({
+        productId: String(it.product?.id || it.id || ''),
+        variationId: String((it as any)?.product?.variationId || 'default'),
+        price: Number(it.variation?.price || it.product?.price || 0),
+        quantity: Number(it.quantity || 0),
+        name: it.variation?.name,
+        image: it.product?.images?.[0],
+      }));
+      replaceCart(next);
+    }, 80);
+    return () => {
+      if (syncTimer.current) clearTimeout(syncTimer.current);
+    };
+  }, [editableItems, hasUserEdited, replaceCart]);
 
   // Authentication protection - redirect to welcome if not authenticated
   useEffect(() => {
@@ -197,7 +224,7 @@ export default function CheckoutScreen() {
         <OrderSummary
           cartItems={editableItems}
           subtotal={editedSubtotal}
-          deliveryFee={deliveryFee}
+          deliveryFee={calculatedDeliveryFee}
           discount={discount}
           total={editedTotal}
           savings={savings}
@@ -234,19 +261,52 @@ export default function CheckoutScreen() {
         <DeliveryInstructionsSection />
       </ScrollView>
 
-      <PlaceOrderButton
-        onPlaceOrder={() => {
-          if (!selectedAddress) {
-            setAddressModalVisible(true);
-            return;
-          }
-          setPaymentModalVisible(true);
-        }}
-        isPlacingOrder={placeOrderMutation.isPending}
-        total={editedTotal}
-        label="Click to Pay"
-        disabled={!selectedDeliverySlot}
-      />
+      {editableItems.length > 0 && (
+        hasPendingPayment ? (
+          <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
+            <TouchableOpacity
+              onPress={verifyPaymentManually}
+              style={{
+                backgroundColor: "#10B981",
+                borderRadius: 12,
+                paddingVertical: 16,
+                alignItems: "center",
+                shadowColor: "#10B981",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
+            >
+              <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700" }}>
+                Verify Payment
+              </Text>
+            </TouchableOpacity>
+            <Text style={{ 
+              textAlign: "center", 
+              color: "#6B7280", 
+              fontSize: 12, 
+              marginTop: 8 
+            }}>
+              Payment is being processed. Tap to verify.
+            </Text>
+          </View>
+        ) : (
+          <PlaceOrderButton
+            onPlaceOrder={() => {
+              if (!selectedAddress) {
+                setAddressModalVisible(true);
+                return;
+              }
+              setPaymentModalVisible(true);
+            }}
+            isPlacingOrder={placeOrderMutation.isPending}
+            total={editedTotal}
+            label="Click to Pay"
+            disabled={!selectedDeliverySlot}
+          />
+        )
+      )}
     </Animated.View>
 
     <AddressModal

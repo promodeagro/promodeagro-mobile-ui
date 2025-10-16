@@ -40,7 +40,7 @@ export default function GlobalCheckoutWidget() {
   }
 
   const handleViewCart = () => {
-    router.push("/(tabs)/cart" as any);
+    router.push("/checkout" as any);
   };
 
   const handleCheckout = () => {
@@ -113,7 +113,7 @@ export default function GlobalCheckoutWidget() {
               color: "#D1D5DB",
             }}
           >
-            {totalItems} {totalItems === 1 ? "item" : "items"} • ₹{totalAmount}
+            {totalItems} {totalItems === 1 ? "item" : "items"} • Subtotal ₹{totalAmount}
           </Text>
         </View>
       </TouchableOpacity>

@@ -38,6 +38,8 @@ import * as LinkingExpo from 'expo-linking';
 import { Linking } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback } from 'react';
 import { CategoryProductsSection } from "../../components/home/CategoryProductsSection";
 import OrderCancellationModal from "../../components/orders/OrderCancellationModal";
 import OrderModificationModal from "../../components/orders/OrderModificationModal";
@@ -141,6 +143,22 @@ export default function OrdersScreen() {
       setOrders([]);
     }
   }, [isAuthenticated, userId]);
+
+  // Refresh orders whenever this screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated && userId) {
+        fetchOrders();
+      }
+    }, [isAuthenticated, userId])
+  );
+
+  // Helper to map display status considering payment status
+  const getDisplayStatus = (order: any) => {
+    const paid = order?.paymentDetails?.status === 'PAID' || order?.paymentDetails?.status === 'paid' || order?.paymentDetails?.status === 'completed';
+    if (paid) return 'confirmed';
+    return order?.status;
+  };
 
   const fetchOrders = async () => {
     if (!userId) {
@@ -377,11 +395,11 @@ export default function OrdersScreen() {
   };
 
   const canModifyOrder = (order: any) => {
-    return ["pending", "confirmed"].includes(order.status);
+    return ["pending", "confirmed"].includes(getDisplayStatus(order));
   };
 
   const canCancelOrder = (order: any) => {
-    return ["pending", "confirmed", "preparing"].includes(order.status);
+    return ["pending", "confirmed", "preparing"].includes(getDisplayStatus(order));
   };
 
   const getStatusIcon = (status: string) => {
@@ -435,24 +453,28 @@ export default function OrdersScreen() {
     }
   };
 
-// sssss
-  
   const getStatusText = (status: string) => {
-    const s = (status || '').toLowerCase();
-    // Canonical labels required:
-    // order placed, in process, packed, out for delivery, delivered
-    if (s === 'delivered') return 'Delivered';
-    if (s === 'out_for_delivery' || s === 'out-for-delivery' || s === 'dispatch' || s === 'shipped') return 'Out for Delivery';
-    if (s === 'packed' || s === 'ready_to_ship' || s === 'ready-to-ship') return 'Packed';
-    if (s === 'confirmed' || s === 'processing' || s === 'processed' || s === 'in_process' || s === 'in-process') return 'In Process';
-    if (s === 'pending' || s === 'created' || s === 'order_placed' || s === 'placed') return 'Order Placed';
-    if (s === 'cancelled' || s === 'canceled') return 'Cancelled';
-    return 'In Process';
+    switch (status) {
+      case "delivered":
+        return "Delivered";
+      case "out_for_delivery":
+        return "Out for Delivery";
+      case "packed":
+        return "Packed";
+      case "confirmed":
+        return "Confirmed";
+      case "cancelled":
+        return "Cancelled";
+      case "pending":
+        return "Pending";
+      default:
+        return "Processing";
+    }
   };
 
   const filteredOrders = orders.filter((order) => {
-    if (activeTab === 'all') return true;
-    return getCanonicalStage(order) === activeTab;
+    if (activeTab === "all") return true;
+    return getDisplayStatus(order) === activeTab;
   });
 
 
@@ -552,9 +574,11 @@ export default function OrdersScreen() {
     }
   };
 
-  const OrderCard = ({ order }: { order: any }) => (
+  const OrderCard = ({ order }: { order: any }) => {
+    const displayStatus = getDisplayStatus(order);
+    return (
     <TouchableOpacity
-      onPress={() => handleViewDetails(order)}
+      onPress={() => router.push(`/order-confirmation/${order.id}`)}
       style={{
         backgroundColor: "#FFFFFF",
         borderRadius: 20,
@@ -599,7 +623,7 @@ export default function OrdersScreen() {
                 marginLeft: 4,
               }}
             >
-              {new Date(order.createdAt || order.created_at || order.createdAtUtc || order.createdDate || Date.now()).toLocaleDateString("en-US", {
+              {new Date(order.createdAt).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
@@ -613,23 +637,23 @@ export default function OrdersScreen() {
             style={{
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: getStatusBgColor(order.status),
+              backgroundColor: getStatusBgColor(displayStatus),
               borderRadius: 20,
               paddingHorizontal: 12,
               paddingVertical: 6,
               marginBottom: 8,
             }}
           >
-            {getStatusIcon(order.status)}
+            {getStatusIcon(displayStatus)}
             <Text
               style={{
                 fontSize: 13,
                 fontFamily: "Inter_600SemiBold",
-                color: getStatusColor(order.status),
+                color: getStatusColor(displayStatus),
                 marginLeft: 6,
               }}
             >
-              {getStatusText(order.status)}
+              {getStatusText(displayStatus)}
             </Text>
           </View>
           <Text
@@ -639,7 +663,7 @@ export default function OrdersScreen() {
               color: "#8B5CF6",
             }}
           >
-            ₹{parseFloat(order.finalTotal || order.totalPrice || order.total_amount || order.total || 0).toFixed(2)}
+            ₹{parseFloat(order.finalTotal || order.totalPrice || 0).toFixed(2)}
           </Text>
         </View>
       </View>
@@ -885,7 +909,7 @@ export default function OrdersScreen() {
         )}
       </View>
     </TouchableOpacity>
-  );
+  ); };
 
   // Loading screen component
   const LoadingScreen = () => (
@@ -963,23 +987,23 @@ export default function OrdersScreen() {
             {
               key: "pending",
               label: "Pending",
-              count: orders.filter((o) => o.status === "pending").length,
+              count: orders.filter((o) => getDisplayStatus(o) === "pending").length,
             },
             {
               key: "confirmed",
               label: "Confirmed",
-              count: orders.filter((o) => o.status === "confirmed").length,
+              count: orders.filter((o) => getDisplayStatus(o) === "confirmed").length,
             },
             {
               key: "out_for_delivery",
               label: "In Transit",
-              count: orders.filter((o) => o.status === "out_for_delivery")
+              count: orders.filter((o) => getDisplayStatus(o) === "out_for_delivery")
                 .length,
             },
             {
               key: "delivered",
               label: "Delivered",
-              count: orders.filter((o) => o.status === "delivered").length,
+              count: orders.filter((o) => getDisplayStatus(o) === "delivered").length,
             },
           ].map((tab) => (
             <TouchableOpacity

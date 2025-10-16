@@ -27,6 +27,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { apiService } from "../../config/api";
+import { useSelector } from "react-redux";
 
 export default function OrderConfirmationScreen() {
   const [fontsLoaded] = useFonts({
@@ -39,6 +40,8 @@ export default function OrderConfirmationScreen() {
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  const { user, isAuthenticated } = useSelector((state: any) => state?.login || { user: null, isAuthenticated: false });
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,23 +56,47 @@ export default function OrderConfirmationScreen() {
   // Fetch order details from API
   useEffect(() => {
     const fetchOrderDetails = async () => {
-      if (!id) {
-        setError("Order ID not found");
-        setLoading(false);
-        return;
+      const routeId = (id as string) || "";
+      if (!routeId || routeId === "null" || routeId === "undefined") {
+        // Fallback: try to load most recent order for this user
+        if (!isAuthenticated || !user?.id) {
+          setError("Order ID not found");
+          setLoading(false);
+          return;
+        }
+        try {
+          console.log("No route order ID. Fetching recent orders for user:", user.id);
+          const recents = await apiService.getOrdersByUserId(user.id);
+          if (recents?.orders && recents.orders.length > 0) {
+            const mostRecent = recents.orders[0];
+            setOrder(mostRecent);
+            setLoading(false);
+            return;
+          }
+          setError("Order not found");
+          setLoading(false);
+          return;
+        } catch (e: any) {
+          console.error("Failed to load recent orders for fallback:", e);
+          setError(e?.message || "Order not found");
+          setLoading(false);
+          return;
+        }
       }
 
       try {
-        console.log("Fetching order details for ID:", id);
-        const response = await apiService.getOrderById(id as string);
+        console.log("Fetching order details for ID:", routeId);
+        const response = await apiService.getOrderById(encodeURIComponent(routeId));
         console.log("Order API response:", response);
         
         if (response.order) {
           setOrder(response.order);
+        } else if (response.id) {
+          setOrder(response);
         } else {
           setError("Order not found");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching order details:", err);
         setError(err.message || "Failed to fetch order details");
       } finally {
@@ -78,7 +105,7 @@ export default function OrderConfirmationScreen() {
     };
 
     fetchOrderDetails();
-  }, [id]);
+  }, [id, isAuthenticated, user?.id]);
 
   useEffect(() => {
     if (!loading && order) {

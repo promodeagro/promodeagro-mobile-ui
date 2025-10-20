@@ -15,8 +15,7 @@ import {
   Home,
   MapPin,
   Package,
-  Truck,
-  ArrowLeft
+  Truck
 } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -29,6 +28,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { apiService } from "../../config/api";
+import { BackButton } from "../../components/BackButton";
 import { useSelector } from "react-redux";
 import { Image } from "expo-image";
 
@@ -233,26 +233,23 @@ export default function OrderConfirmationScreen() {
       <StatusBar style="light" />
 
       {/* Back Button */}
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={{ position: 'absolute', top: insets.top + 12, left: 12, zIndex: 20, backgroundColor: '#111827', borderRadius: 20, padding: 8, opacity: 0.9 }}
-      >
-        <ArrowLeft size={18} color="#FFFFFF" />
-      </TouchableOpacity>
+      <View style={{ position: 'absolute', top: insets.top + 8, left: 12, zIndex: 20 }}>
+        <BackButton size={32} />
+      </View>
 
       {/* Header with Gradient */}
       <View
         style={{
-          paddingTop: insets.top + 20,
-          paddingBottom: 40,
+          paddingTop: insets.top + 12,
+          paddingBottom: 32,
           paddingHorizontal: 20,
           backgroundColor: "#10B981",
-          borderBottomLeftRadius: 24,
-          borderBottomRightRadius: 24,
+          borderBottomLeftRadius: 20,
+          borderBottomRightRadius: 20,
         }}
       >
         {/* Success Animation */}
-        <View style={{ alignItems: "center", marginBottom: 20 }}>
+        <View style={{ alignItems: "center", marginBottom: 16 }}>
           <Animated.View
             style={{
               transform: [
@@ -268,21 +265,21 @@ export default function OrderConfirmationScreen() {
           >
             <View
               style={{
-                width: 80,
-                height: 80,
-                borderRadius: 40,
+                width: 64,
+                height: 64,
+                borderRadius: 32,
                 backgroundColor: "#FFFFFF",
                 justifyContent: "center",
                 alignItems: "center",
-                marginBottom: 16,
+                marginBottom: 12,
                 shadowColor: "#000",
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.15,
-                shadowRadius: 16,
-                elevation: 8,
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.12,
+                shadowRadius: 12,
+                elevation: 6,
               }}
             >
-              <CheckCircle size={48} color="#10B981" />
+              <CheckCircle size={36} color="#10B981" />
             </View>
           </Animated.View>
 
@@ -294,22 +291,22 @@ export default function OrderConfirmationScreen() {
           >
             <Text
               style={{
-                fontSize: 28,
+                fontSize: 24,
                 fontFamily: "Inter_700Bold",
                 color: "#FFFFFF",
                 textAlign: "center",
-                marginBottom: 8,
+                marginBottom: 6,
               }}
             >
               Order {statusChipText}
             </Text>
             <Text
               style={{
-                fontSize: 16,
+                fontSize: 14,
                 fontFamily: "Inter_500Medium",
                 color: "#DCFCE7",
                 textAlign: "center",
-                lineHeight: 24,
+                lineHeight: 20,
               }}
             >
               Thank you for your order.{"\n"}Your groceries are on their way!
@@ -320,7 +317,7 @@ export default function OrderConfirmationScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Order Details Card */}
@@ -329,15 +326,15 @@ export default function OrderConfirmationScreen() {
             transform: [{ translateY: slideAnim }],
             opacity: fadeAnim,
             backgroundColor: "#FFFFFF",
-            marginHorizontal: 20,
-            marginTop: 20,
-            borderRadius: 20,
-            padding: 20,
+            marginHorizontal: 16,
+            marginTop: 16,
+            borderRadius: 16,
+            padding: 16,
             shadowColor: "#000",
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.12,
-            shadowRadius: 16,
-            elevation: 8,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 6,
           }}
         >
           <Text

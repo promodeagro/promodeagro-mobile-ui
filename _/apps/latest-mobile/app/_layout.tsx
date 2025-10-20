@@ -12,6 +12,8 @@ import GlobalCheckoutWidget from '../components/GlobalCheckoutWidget';
 import { API_CONFIG } from '../config/api';
 import store, { persistor } from '../store/store';
 import { CartProvider } from '../utils/CartContext';
+import { WishlistProvider } from '../utils/WishlistContext';
+import { ToastProvider } from '../contexts/ToastContext';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -38,7 +40,9 @@ export default function RootLayout() {
       <PersistGate loading={null} persistor={persistor}>
         <QueryClientProvider client={queryClient}>
           <CartProvider>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <WishlistProvider>
+              <ToastProvider>
+                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
               <Stack>
                 <Stack.Screen name="splash" options={{ headerShown: false }} />
                 <Stack.Screen name="welcome" options={{ headerShown: false }} />
@@ -108,7 +112,9 @@ export default function RootLayout() {
               
               {/* Global Checkout Widget - Visible across all screens */}
               <GlobalCheckoutWidget />
-            </ThemeProvider>
+              </ThemeProvider>
+              </ToastProvider>
+            </WishlistProvider>
           </CartProvider>
         </QueryClientProvider>
       </PersistGate>

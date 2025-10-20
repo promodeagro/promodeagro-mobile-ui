@@ -17,9 +17,9 @@ import {
   Settings,
   Calendar,
   Package,
-  ArrowLeft,
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
+import { BackButton } from "../../components/BackButton";
 
 interface SubscriptionItem {
   product: {
@@ -192,47 +192,44 @@ const SubscriptionsScreen = () => {
         style={{
           backgroundColor: "white",
           paddingHorizontal: 20,
-          paddingVertical: 16,
+          paddingVertical: 12,
           borderBottomWidth: 1,
           borderBottomColor: "#e5e7eb",
         }}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ position: 'absolute', left: 16, top: insets.top + 8, backgroundColor: '#111827', borderRadius: 16, padding: 6, opacity: 0.9 }}
-        >
-          <ArrowLeft size={16} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={{ position: 'absolute', left: 16, top: insets.top + 6 }}>
+          <BackButton size={28} />
+        </View>
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            marginLeft: 24
+            marginLeft: 36
           }}
         >
           <View>
             <Text
-              style={{ fontSize: 24, fontWeight: "bold", color: "#1f2937" }}
+              style={{ fontSize: 22, fontWeight: "bold", color: "#1f2937" }}
             >
               My Subscriptions
             </Text>
-            <Text style={{ fontSize: 14, color: "#6b7280", marginTop: 2 }}>
+            <Text style={{ fontSize: 13, color: "#6b7280", marginTop: 2 }}>
               Manage your recurring orders
             </Text>
           </View>
           <TouchableOpacity
             style={{
               backgroundColor: "#16a34a",
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: 20,
+              paddingHorizontal: 14,
+              paddingVertical: 6,
+              borderRadius: 16,
               flexDirection: "row",
               alignItems: "center",
             }}
           >
-            <Plus size={16} color="white" />
-            <Text style={{ color: "white", marginLeft: 4, fontWeight: "600" }}>
+            <Plus size={14} color="white" />
+            <Text style={{ color: "white", marginLeft: 4, fontWeight: "600", fontSize: 13 }}>
               New
             </Text>
           </TouchableOpacity>
@@ -241,7 +238,7 @@ const SubscriptionsScreen = () => {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
         showsVerticalScrollIndicator={false}
       >
         {subscriptions.length === 0 ? (

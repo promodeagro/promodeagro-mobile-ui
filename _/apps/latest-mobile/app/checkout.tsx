@@ -214,7 +214,7 @@ export default function CheckoutScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
         showsVerticalScrollIndicator={false}
       >
         {/* 1) Cart items first */}
@@ -243,8 +243,8 @@ export default function CheckoutScreen() {
         )}
 
         {/* 2) Missed something? Show products like on Home + See all */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>Missed something?</Text>
+        <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>Missed something?</Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/categories')}>
             <Text style={{ color: '#8B5CF6', fontWeight: '700' }}>See all products</Text>
           </TouchableOpacity>

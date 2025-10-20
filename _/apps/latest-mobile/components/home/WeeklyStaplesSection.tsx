@@ -136,12 +136,10 @@ export function WeeklyStaplesSection({ items }: { items: any[] }) {
                   marginRight: 16,
                   overflow: "hidden",
                   shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 12,
-                  elevation: 4,
-                  borderWidth: 1,
-                  borderColor: "#F3F4F6",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 4,
+                  elevation: 1,
                 }}
               >
                 <View style={{ position: "relative", height: 100 }}>
@@ -275,17 +273,6 @@ export function WeeklyStaplesSection({ items }: { items: any[] }) {
                     </TouchableOpacity>
                   )}
 
-                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        fontFamily: "Inter_500Medium",
-                        color: "#6B7280",
-                      }}
-                    >
-                      ⭐ {item.rating}
-                    </Text>
-                  </View>
 
                   <View
                     style={{

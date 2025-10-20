@@ -42,6 +42,14 @@ const store = configureStore({
           "persist/PURGE",
           "persist/REGISTER",
         ],
+        // Ignore these field paths in all actions
+        ignoredActionPaths: ['meta.arg', 'payload.timestamp'],
+        // Ignore these paths in the state
+        ignoredPaths: ['items.dates'],
+      },
+      // Disable immutable check for better performance
+      immutableCheck: { 
+        ignoredPaths: ['items.dates'] 
       },
     }),
 });

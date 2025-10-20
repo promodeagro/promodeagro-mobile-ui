@@ -22,27 +22,21 @@ const { width } = Dimensions.get("window");
 const welcomeSlides = [
   {
     id: 1,
-    image:
-      "https://images.unsplash.com/photo-1560258018-c7db7645254e?w=800&h=600&fit=crop&crop=center&auto=enhance&q=80",
     title: "Fresh from our farms to your door",
-    subtitle:
-      "Get the freshest produce delivered directly from our organic farms to your doorstep",
+    subtitle: "Get the freshest produce delivered directly from our organic farms to your doorstep",
+    icon: "🌱",
   },
   {
     id: 2,
-    image:
-      "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop",
     title: "Effortless shopping, amazing prices",
-    subtitle:
-      "Shop with ease and discover unbeatable prices on premium quality organic produce",
+    subtitle: "Shop with ease and discover unbeatable prices on premium quality organic produce",
+    icon: "🛒",
   },
   {
     id: 3,
-    image:
-      "https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=800&h=600&fit=crop",
     title: "Fast delivery, always on time",
-    subtitle:
-      "Choose your preferred delivery slot and we'll be there right on time, guaranteed",
+    subtitle: "Choose your preferred delivery slot and we'll be there right on time, guaranteed",
+    icon: "🚚",
   },
 ];
 
@@ -97,156 +91,145 @@ export default function WelcomeScreen() {
   const currentSlide = welcomeSlides[currentIndex];
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
-      <StatusBar style="light" />
+    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+      <StatusBar style="dark" />
 
-      {/* Background Image */}
-      <View style={{ flex: 1, position: "relative" }}>
-        <Image
-          source={{ uri: currentSlide.image }}
+      {/* Skip Button */}
+      <TouchableOpacity
+        onPress={handleSkip}
+        style={{
+          position: "absolute",
+          top: Math.max(insets.top + 20, 60),
+          right: 20,
+          paddingHorizontal: 16,
+          paddingVertical: 8,
+          backgroundColor: "#F3F4F6",
+          borderRadius: 20,
+          zIndex: 10,
+        }}
+      >
+        <Text
           style={{
-            width: "100%",
-            height: "100%",
-          }}
-          contentFit="cover"
-          transition={300}
-        />
-
-        {/* Overlay */}
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(46, 125, 50, 0.4)",
-          }}
-        />
-
-        {/* Skip Button */}
-        <TouchableOpacity
-          onPress={handleSkip}
-          style={{
-            position: "absolute",
-            top: Math.max(insets.top + 20, 60),
-            right: 20,
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            backgroundColor: "rgba(255, 255, 255, 0.2)",
-            borderRadius: 20,
+            fontSize: 14,
+            fontFamily: "Inter_600SemiBold",
+            color: "#6B7280",
           }}
         >
-          <Text
-            style={{
-              fontSize: 13,
-              fontFamily: "Inter_600SemiBold",
-              color: "#FFFFFF",
-            }}
-          >
-            Skip
-          </Text>
-        </TouchableOpacity>
+          Skip
+        </Text>
+      </TouchableOpacity>
 
-        {/* Content */}
-        <Animated.View
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            paddingHorizontal: 32,
-            paddingTop: 32,
-            paddingBottom: Math.max(insets.bottom + 20, 32),
-            opacity: fadeAnimation,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 26,
-              fontFamily: "Inter_600SemiBold",
-              color: "#FFFFFF",
-              textAlign: "center",
-              marginBottom: 16,
-              lineHeight: 32,
-            }}
-          >
-            {currentSlide.title}
-          </Text>
-
-          <Text
-            style={{
-              fontSize: 15,
-              fontFamily: "Inter_400Regular",
-              color: "#FFFFFF",
-              textAlign: "center",
-              marginBottom: 40,
-              lineHeight: 22,
-              opacity: 0.9,
-            }}
-          >
-            {currentSlide.subtitle}
-          </Text>
-
-          {/* Progress Indicators */}
+      {/* Content */}
+      <Animated.View
+        style={{
+          flex: 1,
+          paddingHorizontal: 32,
+          paddingTop: Math.max(insets.top + 100, 120),
+          paddingBottom: Math.max(insets.bottom + 20, 32),
+          opacity: fadeAnimation,
+          justifyContent: "center",
+        }}
+      >
+        {/* Icon */}
+        <View style={{ alignItems: "center", marginBottom: 48 }}>
           <View
             style={{
-              flexDirection: "row",
+              width: 120,
+              height: 120,
+              backgroundColor: "#F3F4F6",
+              borderRadius: 60,
               justifyContent: "center",
+              alignItems: "center",
               marginBottom: 32,
             }}
           >
-            {welcomeSlides.map((_, index) => (
-              <View
-                key={index}
-                style={{
-                  width: index === currentIndex ? 24 : 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor:
-                    index === currentIndex
-                      ? "#FFFFFF"
-                      : "rgba(255, 255, 255, 0.3)",
-                  marginHorizontal: 4,
-                }}
-              />
-            ))}
+            <Text style={{ fontSize: 48 }}>{currentSlide.icon}</Text>
           </View>
+        </View>
 
-          {/* Next Button */}
-          <TouchableOpacity
-            onPress={handleNext}
+        <Text
+          style={{
+            fontSize: 28,
+            fontFamily: "Inter_600SemiBold",
+            color: "#111827",
+            textAlign: "center",
+            marginBottom: 16,
+            lineHeight: 36,
+          }}
+        >
+          {currentSlide.title}
+        </Text>
+
+        <Text
+          style={{
+            fontSize: 16,
+            fontFamily: "Inter_400Regular",
+            color: "#6B7280",
+            textAlign: "center",
+            marginBottom: 48,
+            lineHeight: 24,
+          }}
+        >
+          {currentSlide.subtitle}
+        </Text>
+
+        {/* Progress Indicators */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            marginBottom: 48,
+          }}
+        >
+          {welcomeSlides.map((_, index) => (
+            <View
+              key={index}
+              style={{
+                width: index === currentIndex ? 24 : 8,
+                height: 8,
+                borderRadius: 4,
+                backgroundColor:
+                  index === currentIndex ? "#8B5CF6" : "#E5E7EB",
+                marginHorizontal: 4,
+              }}
+            />
+          ))}
+        </View>
+
+        {/* Next Button */}
+        <TouchableOpacity
+          onPress={handleNext}
+          style={{
+            backgroundColor: "#8B5CF6",
+            borderRadius: 16,
+            paddingVertical: 16,
+            paddingHorizontal: 24,
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            shadowColor: "#8B5CF6",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            elevation: 4,
+          }}
+        >
+          <Text
             style={{
-              backgroundColor: "#FFFFFF",
-              borderRadius: 16,
-              paddingVertical: 16,
-              paddingHorizontal: 24,
-              flexDirection: "row",
-              justifyContent: "center",
-              alignItems: "center",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 4,
+              fontSize: 16,
+              fontFamily: "Inter_600SemiBold",
+              color: "#FFFFFF",
+              marginRight: 8,
             }}
           >
-            <Text
-              style={{
-                fontSize: 15,
-                fontFamily: "Inter_600SemiBold",
-                color: "#2E7D32",
-                marginRight: 8,
-              }}
-            >
-              {currentIndex === welcomeSlides.length - 1
-                ? "Get Started"
-                : "Next"}
-            </Text>
-            <ChevronRight size={20} color="#2E7D32" />
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
+            {currentIndex === welcomeSlides.length - 1
+              ? "Get Started"
+              : "Next"}
+          </Text>
+          <ChevronRight size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }
+

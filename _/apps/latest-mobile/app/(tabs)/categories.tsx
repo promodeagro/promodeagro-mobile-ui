@@ -9,7 +9,7 @@ import {
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ArrowLeft, Grid3X3, Search, Sparkles } from "lucide-react-native";
+import { Grid3X3, Search, Sparkles } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,6 +23,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from 'react-redux';
+import { BackButton } from "../../components/BackButton";
 import status from "../../store/Constants";
 import { fetchCategories } from "../../store/Home/HomeThunk";
 
@@ -117,9 +118,9 @@ export default function CategoriesScreen() {
       {/* Header */}
       <View
         style={{
-          paddingTop: insets.top + 16,
+          paddingTop: insets.top + 8,
           paddingHorizontal: 20,
-          paddingBottom: 16,
+          paddingBottom: 12,
           backgroundColor: "#FFFFFF",
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
@@ -128,37 +129,34 @@ export default function CategoriesScreen() {
           elevation: 4,
         }}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ position: 'absolute', left: 16, top: insets.top + 10, backgroundColor: '#111827', borderRadius: 16, padding: 6, opacity: 0.9 }}
-        >
-          <ArrowLeft size={16} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={{ position: 'absolute', left: 16, top: insets.top + 6 }}>
+          <BackButton size={28} />
+        </View>
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
-            marginBottom: 8,
-            marginLeft: 40
+            marginBottom: 6,
+            marginLeft: 36
           }}
         >
           <View
             style={{
-              width: 32,
-              height: 32,
+              width: 28,
+              height: 28,
               backgroundColor: "#F3F4F6",
-              borderRadius: 16,
+              borderRadius: 14,
               justifyContent: "center",
               alignItems: "center",
-              marginRight: 12,
+              marginRight: 10,
             }}
           >
-            <Grid3X3 size={18} color="#8B5CF6" />
+            <Grid3X3 size={16} color="#8B5CF6" />
           </View>
           <Text
             style={{
-              fontSize: 24,
-              fontFamily: "Inter_800ExtraBold",
+              fontSize: 22,
+              fontFamily: "Inter_700Bold",
               color: "#111827",
             }}
           >
@@ -167,10 +165,10 @@ export default function CategoriesScreen() {
         </View>
         <Text
           style={{
-            fontSize: 16,
+            fontSize: 15,
             fontFamily: "Inter_500Medium",
             color: "#6B7280",
-            marginBottom: 20,
+            marginBottom: 16,
           }}
         >
           Discover fresh groceries by category
@@ -179,32 +177,30 @@ export default function CategoriesScreen() {
         {/* Enhanced Search Bar */}
         <View
           style={{
-            height: 52,
+            height: 48,
             backgroundColor: "#FFFFFF",
-            borderRadius: 26,
+            borderRadius: 24,
             flexDirection: "row",
             alignItems: "center",
-            paddingHorizontal: 20,
+            paddingHorizontal: 18,
             shadowColor: "#000",
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.15,
-            shadowRadius: 16,
-            elevation: 8,
-            borderWidth: 2,
-            borderColor: "#F3F4F6",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            elevation: 2,
           }}
         >
           <View
             style={{
-              width: 32,
-              height: 32,
+              width: 28,
+              height: 28,
               backgroundColor: "#F3F4F6",
-              borderRadius: 16,
+              borderRadius: 14,
               justifyContent: "center",
               alignItems: "center",
             }}
           >
-            <Search size={18} color="#8B5CF6" />
+            <Search size={16} color="#8B5CF6" />
           </View>
           <TextInput
             value={searchQuery}
@@ -213,23 +209,23 @@ export default function CategoriesScreen() {
             placeholderTextColor="#9CA3AF"
             style={{
               flex: 1,
-              marginLeft: 16,
-              fontSize: 15,
+              marginLeft: 12,
+              fontSize: 14,
               fontFamily: "Inter_500Medium",
               color: "#111827",
             }}
           />
           <TouchableOpacity
             style={{
-              width: 32,
-              height: 32,
+              width: 28,
+              height: 28,
               backgroundColor: "#8B5CF6",
-              borderRadius: 16,
+              borderRadius: 14,
               justifyContent: "center",
               alignItems: "center",
             }}
           >
-            <Sparkles size={16} color="#FFFFFF" />
+            <Sparkles size={14} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -238,8 +234,8 @@ export default function CategoriesScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingTop: 16,
+          paddingHorizontal: 16,
+          paddingTop: 12,
           paddingBottom: insets.bottom + 100,
         }}
         showsVerticalScrollIndicator={false}
@@ -273,20 +269,18 @@ export default function CategoriesScreen() {
               style={{
                 width: "100%",
                 backgroundColor: "#FFFFFF",
-                borderRadius: 20,
-                marginBottom: 20,
+                borderRadius: 16,
+                marginBottom: 16,
                 overflow: "hidden",
                 shadowColor: "#000",
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.12,
-                shadowRadius: 16,
-                elevation: 6,
-                borderWidth: 1,
-                borderColor: "#F3F4F6",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 4,
+                elevation: 2,
               }}
             >
               {/* Category Image with Overlay */}
-              <View style={{ position: "relative", height: 180 }}>
+              <View style={{ position: "relative", height: 140 }}>
                 <Image
                   source={{ uri: filteredCategories[0].image }}
                   style={{ width: "100%", height: "100%" }}
@@ -326,22 +320,21 @@ export default function CategoriesScreen() {
               </View>
 
               {/* Category Info */}
-              <View style={{ padding: 20 }}>
+              <View style={{ padding: 16 }}>
                 <View
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    justifyContent: "space-between",
                   }}
                 >
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: 20,
+                        fontSize: 18,
                         fontFamily: "Inter_700Bold",
                         color: "#111827",
-                        marginBottom: 6,
-                        lineHeight: 24,
+                        marginBottom: 4,
+                        lineHeight: 22,
                       }}
                       numberOfLines={2}
                     >
@@ -349,27 +342,13 @@ export default function CategoriesScreen() {
                     </Text>
                     <Text
                       style={{
-                        fontSize: 15,
+                        fontSize: 14,
                         fontFamily: "Inter_500Medium",
                         color: "#6B7280",
                       }}
                     >
                       {filteredCategories[0].subtitle}
                     </Text>
-                  </View>
-                  <View
-                    style={{
-                      width: 40,
-                      height: 40,
-                      backgroundColor: "#F3F4F6",
-                      borderRadius: 20,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      borderWidth: 1,
-                      borderColor: "#8B5CF6",
-                    }}
-                  >
-                    <ArrowLeft size={20} color="#8B5CF6" />
                   </View>
                 </View>
               </View>
@@ -395,12 +374,10 @@ export default function CategoriesScreen() {
                 marginBottom: 16,
                 overflow: "hidden",
                 shadowColor: "#000",
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.12,
-                shadowRadius: 16,
-                elevation: 6,
-                borderWidth: 1,
-                borderColor: "#F3F4F6",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 4,
+                elevation: 2,
               }}
             >
               {/* Category Image with Overlay */}
@@ -449,7 +426,6 @@ export default function CategoriesScreen() {
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    justifyContent: "space-between",
                   }}
                 >
                   <View style={{ flex: 1 }}>
@@ -474,20 +450,6 @@ export default function CategoriesScreen() {
                     >
                       {category.subtitle}
                     </Text>
-                  </View>
-                  <View
-                    style={{
-                      width: 32,
-                      height: 32,
-                      backgroundColor: "#F3F4F6",
-                      borderRadius: 16,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      borderWidth: 1,
-                      borderColor: "#8B5CF6",
-                    }}
-                  >
-                    <ArrowLeft size={16} color="#8B5CF6" />
                   </View>
                 </View>
               </View>
@@ -560,8 +522,6 @@ export default function CategoriesScreen() {
               shadowOpacity: 0.12,
               shadowRadius: 16,
               elevation: 6,
-              borderWidth: 1,
-              borderColor: "#F3F4F6",
             }}
           >
             <Text

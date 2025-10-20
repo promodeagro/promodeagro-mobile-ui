@@ -17,6 +17,9 @@ export const API_CONFIG = {
     GET_ORDER_BY_ID: "https://7x29t2x9xk.execute-api.ap-south-1.amazonaws.com/prod/getOrderById",
     GET_ORDERS_BY_USER_ID: "https://7x29t2x9xk.execute-api.ap-south-1.amazonaws.com/prod/order",
     GET_DELIVERY_SLOTS: "https://7x29t2x9xk.execute-api.ap-south-1.amazonaws.com/prod/slot",
+    PAY_ORDER: "https://7x29t2x9xk.execute-api.ap-south-1.amazonaws.com/prod/order/pay",
+    MODIFY_ORDER: "https://7x29t2x9xk.execute-api.ap-south-1.amazonaws.com/prod/order/modify",
+    CANCEL_ORDER: "https://7x29t2x9xk.execute-api.ap-south-1.amazonaws.com/prod/order/cancel",
   },
   
   // API endpoints
@@ -276,6 +279,119 @@ export const apiService = {
       return data;
     } catch (error) {
       console.error('Error fetching delivery slots:', error);
+      throw error;
+    }
+  },
+
+  // Pay for an order
+  async payOrder(orderId: string, paymentMethod: string = 'online', userId?: string, token?: string) {
+    try {
+      console.log('Paying for order:', orderId, 'with method:', paymentMethod);
+      console.log('User ID:', userId);
+      console.log('Token available:', !!token);
+      
+      const headers: any = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Try without authentication headers first (like placeOrder)
+      console.log('Making request without authentication headers (like placeOrder)');
+      
+      const requestBody = {
+        orderId,
+        paymentMethod,
+        userId,
+      };
+      
+      console.log('Request body:', requestBody);
+      console.log('Request headers:', headers);
+      console.log('API endpoint:', API_CONFIG.EXTERNAL_ENDPOINTS.PAY_ORDER);
+      
+      const response = await fetch(API_CONFIG.EXTERNAL_ENDPOINTS.PAY_ORDER, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Pay order failed:', response.status, errorText);
+        throw new Error(`HTTP error! status: ${response.status}${errorText ? ` - ${errorText}` : ''}`);
+      }
+
+      const result = await response.json();
+      console.log('Pay order response:', result);
+      return result;
+    } catch (error) {
+      console.error('Error paying for order:', error);
+      throw error;
+    }
+  },
+
+  // Modify an order
+  async modifyOrder(orderId: string, modifications: any, userId?: string, token?: string) {
+    try {
+      console.log('Modifying order:', orderId, 'with modifications:', modifications);
+      
+      const headers: any = {
+        'Content-Type': 'application/json',
+      };
+      
+      const response = await fetch(API_CONFIG.EXTERNAL_ENDPOINTS.MODIFY_ORDER, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          orderId,
+          modifications,
+          userId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Modify order failed:', response.status, errorText);
+        throw new Error(`HTTP error! status: ${response.status}${errorText ? ` - ${errorText}` : ''}`);
+      }
+
+      const result = await response.json();
+      console.log('Modify order response:', result);
+      return result;
+    } catch (error) {
+      console.error('Error modifying order:', error);
+      throw error;
+    }
+  },
+
+  // Cancel an order
+  async cancelOrder(orderId: string, reason: string = 'Customer request', userId?: string, token?: string) {
+    try {
+      console.log('Cancelling order:', orderId, 'with reason:', reason);
+      
+      const headers: any = {
+        'Content-Type': 'application/json',
+      };
+      
+      const response = await fetch(API_CONFIG.EXTERNAL_ENDPOINTS.CANCEL_ORDER, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          orderId,
+          reason,
+          userId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Cancel order failed:', response.status, errorText);
+        throw new Error(`HTTP error! status: ${response.status}${errorText ? ` - ${errorText}` : ''}`);
+      }
+
+      const result = await response.json();
+      console.log('Cancel order response:', result);
+      return result;
+    } catch (error) {
+      console.error('Error cancelling order:', error);
       throw error;
     }
   },

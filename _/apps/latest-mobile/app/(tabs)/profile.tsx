@@ -13,20 +13,14 @@ import {
     Bell,
     Camera,
     ChevronRight,
-    Clock,
     CreditCard,
-    Crown,
-    Gift,
-    Heart,
     HelpCircle,
+    Heart,
     LogOut,
     MapPin,
     Package,
     Settings,
-    Shield,
-    Star,
-    User,
-    ArrowLeft
+    User
 } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
@@ -41,11 +35,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from 'react-redux';
+import { BackButton } from '../../components/BackButton';
 import status from "../../store/Constants";
 import { logout } from "../../store/Signin/SigninSlice";
 import { fetchPersonalDetails } from "../../store/Signin/SigninThunk";
 import { getFont, getTextStyle } from "../../utils/fontStyles";
 import { apiService } from "../../config/api";
+import { useWishlist } from "../../utils/WishlistContext";
 
 export default function ProfileScreen() {
   const [fontsLoaded] = useFonts({
@@ -60,6 +56,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { totalItems: wishlistCount } = useWishlist();
   const dispatch = useDispatch();
 
   // Redux state with safe access
@@ -158,40 +155,36 @@ export default function ProfileScreen() {
 
   // Get user data from personal details API with safe access
   const personalDetails = personalDetailsData?.data?.data?.user || personalDetailsData?.data?.user;
-  const displayName = personalDetails?.name || user?.name || "User";
-  const displayMobile = personalDetails?.MobileNumber || user?.mobileNumber || "Not provided";
-  const currentBalance = 1250;
-  const tier = "Gold";
-
   
-
-  // Sample user stats
+  // Try to get full name from various sources
+  const getDisplayName = () => {
+    // First try personal details API
+    if (personalDetails?.name) return personalDetails.name;
+    if (personalDetails?.fullName) return personalDetails.fullName;
+    if (personalDetails?.firstName && personalDetails?.lastName) {
+      return `${personalDetails.firstName} ${personalDetails.lastName}`;
+    }
+    
+    // Then try user object
+    if (user?.name) return user.name;
+    if (user?.fullName) return user.fullName;
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    
+    // Fallback
+    return "User";
+  };
+  
+  const displayName = getDisplayName();
+  const displayMobile = personalDetails?.MobileNumber || user?.mobileNumber || user?.phone || "Not provided";
+  // User stats
   const userStats = {
     totalOrders: ordersStats.totalVisible,
     totalSpent: ordersStats.totalSpent,
-    favoriteItems: 12,
-    memberSince: "2023",
   };
 
   const quickActions = [
-    {
-      icon: Star,
-      label: "Loyalty Points",
-      subtitle: `${currentBalance} points • ${tier} tier`,
-      onPress: () => router.push("/loyalty"),
-      color: "#F59E0B",
-      bgColor: "#FFFBEB",
-      borderColor: "#FCD34D",
-    },
-    {
-      icon: Heart,
-      label: "My Favorites",
-      subtitle: `${userStats.favoriteItems} saved items`,
-      onPress: () => router.push("/(tabs)/wishlist"),
-      color: "#EC4899",
-      bgColor: "#FDF2F8",
-      borderColor: "#F9A8D4",
-    },
     {
       icon: MapPin,
       label: "My Addresses",
@@ -210,21 +203,18 @@ export default function ProfileScreen() {
       bgColor: "#EDE9FE",
       borderColor: "#C4B5FD",
     },
+    {
+      icon: Heart,
+      label: "My Wishlist",
+      subtitle: `${wishlistCount} saved items`,
+      onPress: () => router.push("/(tabs)/wishlist"),
+      color: "#EF4444",
+      bgColor: "#FEF2F2",
+      borderColor: "#FECACA",
+    },
   ];
 
   const menuItems = [
-    {
-      icon: Gift,
-      label: "Referral Program",
-      subtitle: "Invite friends and earn rewards",
-      onPress: () => router.push("/referral"),
-    },
-    {
-      icon: Clock,
-      label: "Subscription Orders",
-      subtitle: "Manage recurring deliveries",
-      onPress: () => router.push("/subscriptions"),
-    },
     {
       icon: CreditCard,
       label: "Payment Methods",
@@ -260,14 +250,12 @@ export default function ProfileScreen() {
         padding: 20,
         marginBottom: 16,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-        elevation: 6,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
         flexDirection: "row",
         alignItems: "center",
-        borderWidth: 1,
-        borderColor: "#F3F4F6",
       }}
     >
       <View
@@ -334,12 +322,10 @@ export default function ProfileScreen() {
         flexDirection: "row",
         alignItems: "center",
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        elevation: 4,
-        borderWidth: 1,
-        borderColor: "#F3F4F6",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
       })}
     >
       <View
@@ -387,9 +373,9 @@ export default function ProfileScreen() {
       {/* Header */}
       <View
         style={{
-          paddingTop: insets.top + 20,
-          paddingHorizontal: 24,
-          paddingBottom: 24,
+          paddingTop: insets.top + 12,
+          paddingHorizontal: 20,
+          paddingBottom: 16,
           backgroundColor: "#FFFFFF",
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
@@ -398,37 +384,33 @@ export default function ProfileScreen() {
           elevation: 4,
         }}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ position: 'absolute', left: 16, top: insets.top + 14, backgroundColor: '#111827', borderRadius: 16, padding: 6, opacity: 0.9 }}
-        >
-          <ArrowLeft size={16} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={{ position: 'absolute', left: 16, top: insets.top + 8 }}>
+          <BackButton size={28} />
+        </View>
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
-            marginBottom: 24,
-            marginLeft: 32
+            marginLeft: 28
           }}
         >
           <View
             style={{
-              width: 32,
-              height: 32,
+              width: 28,
+              height: 28,
               backgroundColor: "#EEF2FF",
-              borderRadius: 16,
+              borderRadius: 14,
               justifyContent: "center",
               alignItems: "center",
-              marginRight: 12,
+              marginRight: 10,
             }}
           >
-            <User size={18} color="#6366F1" />
+            <User size={16} color="#6366F1" />
           </View>
           <Text
             style={getTextStyle({
-              fontSize: 28,
-              fontFamily: getFont("Inter_800ExtraBold"),
+              fontSize: 24,
+              fontFamily: getFont("Inter_700Bold"),
               color: "#111827",
             })}
           >
@@ -441,15 +423,15 @@ export default function ProfileScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: 24,
-          paddingTop: 20,
+          paddingHorizontal: 20,
+          paddingTop: 16,
           paddingBottom: insets.bottom + 100,
         }}
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Info */}
-        <View style={{ alignItems: "center", marginBottom: 32 }}>
-          <View style={{ position: "relative", marginBottom: 16 }}>
+        <View style={{ alignItems: "center", marginBottom: 24 }}>
+          <View style={{ position: "relative", marginBottom: 12 }}>
             <View
               style={{
                 padding: 4,
@@ -499,55 +481,23 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
+          <Text
+            style={getTextStyle({
+              fontSize: 24,
+              fontFamily: getFont("Inter_700Bold"),
+              color: "#111827",
               marginBottom: 8,
-            }}
+            })}
           >
-            <Text
-              style={getTextStyle({
-                fontSize: 24,
-                fontFamily: getFont("Inter_700Bold"),
-                color: "#111827",
-                marginRight: 8,
-              })}
-            >
-              {displayName}
-            </Text>
-            <View
-              style={{
-                backgroundColor: "#FEF3C7",
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 12,
-                flexDirection: "row",
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: "#FBBF24",
-              }}
-            >
-              <Crown size={12} color="#F59E0B" />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontFamily: "Inter_600SemiBold",
-                  color: "#F59E0B",
-                  marginLeft: 4,
-                }}
-              >
-                PREMIUM
-              </Text>
-            </View>
-          </View>
+            {displayName}
+          </Text>
 
           <Text
             style={getTextStyle({
               fontSize: 16,
               fontFamily: getFont("Inter_500Medium"),
               color: "#6B7280",
-              marginBottom: 20,
+              marginBottom: 16,
             })}
           >
             +91 {displayMobile}
@@ -608,69 +558,17 @@ export default function ProfileScreen() {
                   Spent
                 </Text>
               </View>
-
-              <View style={{ alignItems: "center" }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 2,
-                  }}
-                >
-                  <Star size={16} color="#F59E0B" fill="#F59E0B" />
-                  <Text
-                    style={{
-                      fontSize: 24,
-                      fontFamily: "Inter_800ExtraBold",
-                      color: "#F59E0B",
-                      marginLeft: 4,
-                    }}
-                  >
-                    4.8
-                  </Text>
-                </View>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontFamily: "Inter_500Medium",
-                    color: "#6B7280",
-                  }}
-                >
-                  Rating
-                </Text>
-              </View>
-
-              <View style={{ alignItems: "center" }}>
-                <Text
-                  style={{
-                    fontSize: 24,
-                    fontFamily: "Inter_800ExtraBold",
-                    color: "#EC4899",
-                  }}
-                >
-                  {userStats.memberSince}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontFamily: "Inter_500Medium",
-                    color: "#6B7280",
-                  }}
-                >
-                  Member
-                </Text>
-              </View>
             </View>
           </View>
         </View>
         {/* Quick Actions */}
-        <View style={{ marginBottom: 32 }}>
+        <View style={{ marginBottom: 24 }}>
           <Text
             style={{
               fontSize: 20,
               fontFamily: "Inter_700Bold",
               color: "#111827",
-              marginBottom: 16,
+              marginBottom: 12,
             }}
           >
             Quick Actions
@@ -681,13 +579,13 @@ export default function ProfileScreen() {
         </View>
 
         {/* Menu Items */}
-        <View style={{ marginBottom: 32 }}>
+        <View style={{ marginBottom: 24 }}>
           <Text
             style={{
               fontSize: 20,
               fontFamily: "Inter_700Bold",
               color: "#111827",
-              marginBottom: 16,
+              marginBottom: 12,
             }}
           >
             Account Settings
@@ -697,71 +595,6 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Premium Features */}
-        <View
-          style={{
-            backgroundColor: "#6366F1",
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 24,
-            shadowColor: "#6366F1",
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.3,
-            shadowRadius: 16,
-            elevation: 8,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 12,
-            }}
-          >
-            <Shield size={24} color="#FFFFFF" />
-            <Text
-              style={{
-                fontSize: 18,
-                fontFamily: "Inter_700Bold",
-                color: "#FFFFFF",
-                marginLeft: 12,
-              }}
-            >
-              Premium Benefits
-            </Text>
-          </View>
-          <Text
-            style={{
-              fontSize: 14,
-              fontFamily: "Inter_500Medium",
-              color: "rgba(255,255,255,0.8)",
-              lineHeight: 20,
-              marginBottom: 16,
-            }}
-          >
-            Enjoy faster delivery, exclusive deals, and priority customer
-            support with your premium membership.
-          </Text>
-          <TouchableOpacity
-            style={{
-              backgroundColor: "rgba(255,255,255,0.2)",
-              borderRadius: 12,
-              paddingVertical: 12,
-              paddingHorizontal: 20,
-              alignSelf: "flex-start",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                fontFamily: "Inter_600SemiBold",
-                color: "#FFFFFF",
-              }}
-            >
-              Manage Membership
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Logout */}
         <TouchableOpacity

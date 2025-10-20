@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import { BackButton } from "../BackButton";
 
 export function CheckoutHeader() {
   const insets = useSafeAreaInsets();
@@ -11,9 +11,9 @@ export function CheckoutHeader() {
   return (
     <View
       style={{
-        paddingTop: insets.top + 16,
+        paddingTop: insets.top + 8,
         paddingHorizontal: 20,
-        paddingBottom: 16,
+        paddingBottom: 12,
         backgroundColor: "#FFFFFF",
         borderBottomWidth: 1,
         borderBottomColor: "#F3F4F6",
@@ -26,12 +26,10 @@ export function CheckoutHeader() {
           justifyContent: "space-between",
         }}
       >
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#2D2D2D" />
-        </TouchableOpacity>
+        <BackButton />
         <Text
           style={{
-            fontSize: 18,
+            fontSize: 16,
             fontFamily: "Inter_600SemiBold",
             color: "#111827",
           }}

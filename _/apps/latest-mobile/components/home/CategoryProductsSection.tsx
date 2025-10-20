@@ -1,10 +1,12 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { ChevronDown, Minus, Plus, Star, X } from "lucide-react-native";
+import { ChevronDown, X, Heart } from "lucide-react-native";
 import { useState } from "react";
 import React, { useMemo, useRef, useCallback, memo } from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View, FlatList } from "react-native";
 import { useCart } from "../../utils/CartContext";
+import { useWishlist } from "../../utils/WishlistContext";
+import { BlinkitQuantityControl } from "../ui/BlinkitQuantityControl";
 
 interface ProductVariation {
   id: string;
@@ -58,6 +60,7 @@ const ProductCard = memo(({
   onOpenVariationModal: () => void;
   onProductPress: () => void;
 }) => {
+  const { toggleWishlist, isInWishlist } = useWishlist();
               return (
                 <TouchableOpacity
                   key={item.groupId}
@@ -68,13 +71,6 @@ const ProductCard = memo(({
                     borderRadius: 16,
                     marginRight: 16,
                     overflow: "hidden",
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 12,
-                    elevation: 4,
-                    borderWidth: 1,
-                    borderColor: "#F3F4F6",
                   }}
                 >
                   <View style={{ position: "relative", height: 130 }}>
@@ -120,32 +116,38 @@ const ProductCard = memo(({
                       </View>
                     )}
 
-                    {/* Rating Badge */}
-                    <View
+
+                    {/* Wishlist Button */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        toggleWishlist({
+                          id: item.groupId,
+                          name: item.name,
+                          price: currentVariation.price,
+                          image: item.image,
+                          category: item.category,
+                          variationId: currentVariation.id,
+                          variation: currentVariation,
+                        });
+                      }}
                       style={{
                         position: "absolute",
                         top: 8,
-                        left: 8,
-                        backgroundColor: "rgba(16, 185, 129, 0.9)",
-                        paddingHorizontal: 6,
-                        paddingVertical: 2,
-                        borderRadius: 8,
-                        flexDirection: "row",
+                        right: 8,
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        justifyContent: "center",
                         alignItems: "center",
                       }}
                     >
-                      <Star size={10} color="#FFFFFF" fill="#FFFFFF" />
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontFamily: "Inter_600SemiBold",
-                          color: "#FFFFFF",
-                          marginLeft: 2,
-                        }}
-                      >
-                        4.5
-                      </Text>
-                    </View>
+                      <Heart 
+                        size={16} 
+                        color={isInWishlist(item.groupId) ? "#EF4444" : "#000000"} 
+                        fill={isInWishlist(item.groupId) ? "#EF4444" : "none"}
+                        strokeWidth={2}
+                      />
+                    </TouchableOpacity>
 
                     {/* Discount Badge if available */}
                     {currentVariation.mrp > 0 && currentVariation.mrp > currentVariation.price && (
@@ -153,7 +155,7 @@ const ProductCard = memo(({
                         style={{
                           position: "absolute",
                           top: 8,
-                          right: 8,
+                          left: 8,
                           backgroundColor: "rgba(239, 68, 68, 0.9)",
                           paddingHorizontal: 6,
                           paddingVertical: 2,
@@ -261,94 +263,15 @@ const ProductCard = memo(({
                           </Text>
                         )}
                       </View>
-                      {/* Add to Cart / Quantity Controls */}
-                      {currentQuantity === 0 ? (
-                        <TouchableOpacity
-                          style={{
-                width: 32,
-                height: 32,
-                            backgroundColor: isInStock ? "#8B5CF6" : "#D1D5DB",
-                borderRadius: 16,
-                            justifyContent: "center",
-                            alignItems: "center",
-                          }}
-                          disabled={!isInStock}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            if (isInStock) {
-                  onAddToCart();
-                            }
-                          }}
-                        >
-              <Plus size={16} color={isInStock ? "#FFFFFF" : "#9CA3AF"} strokeWidth={2.5} />
-                        </TouchableOpacity>
-                      ) : (
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            backgroundColor: "#8B5CF6",
-                            borderRadius: 16,
-                            paddingHorizontal: 6,
-                            paddingVertical: 3,
-                          }}
-                        >
-                          <TouchableOpacity
-                            onPress={(e) => {
-                              e.stopPropagation();
-                  onDecreaseQuantity();
-                            }}
-                            style={{
-                              width: 20,
-                              height: 20,
-                              justifyContent: "center",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Minus size={12} color="#FFFFFF" strokeWidth={2.5} />
-                          </TouchableOpacity>
-                          
-                          <View
-                            style={{
-                              paddingHorizontal: 6,
-                              paddingVertical: 2,
-                              minWidth: 16,
-                              justifyContent: "center",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Text
-                              style={{
-                                fontSize: 12,
-                                fontFamily: "Inter_700Bold",
-                                color: "#FFFFFF",
-                                textAlign: "center",
-                              }}
-                            >
-                              {currentQuantity}
-                            </Text>
-                          </View>
-                          
-                          <TouchableOpacity
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              if (isInStock) {
-                    onIncreaseQuantity();
-                              }
-                            }}
-                            disabled={!isInStock}
-                            style={{
-                              width: 20,
-                              height: 20,
-                              justifyContent: "center",
-                              alignItems: "center",
-                              opacity: isInStock ? 1 : 0.5,
-                            }}
-                          >
-                            <Plus size={12} color="#FFFFFF" strokeWidth={2.5} />
-                          </TouchableOpacity>
-                        </View>
-                      )}
+                      {/* Blinkit-style Quantity Controls */}
+                      <BlinkitQuantityControl
+                        currentQuantity={currentQuantity}
+                        isInStock={isInStock}
+                        onAddToCart={onAddToCart}
+                        onIncreaseQuantity={onIncreaseQuantity}
+                        onDecreaseQuantity={onDecreaseQuantity}
+                        size="medium"
+                      />
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -492,7 +415,7 @@ export const CategoryProductsSection = memo(({ categoryData }: { categoryData: C
   return (
     <>
       {orderedCategories.map((category, categoryIndex) => (
-        <View key={`${category.category}-${categoryIndex}`} style={{ marginBottom: 32 }}>
+        <View key={`${category.category}-${categoryIndex}`} style={{ marginBottom: 32, borderWidth: 0 }}>
           <Text
             style={{
               fontSize: 20,
@@ -508,7 +431,8 @@ export const CategoryProductsSection = memo(({ categoryData }: { categoryData: C
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: 16 }}
+            contentContainerStyle={{ paddingLeft: 16, paddingRight: 16 }}
+            style={{ borderWidth: 0 }}
             data={Array.isArray(category.items) ? category.items : []}
             keyExtractor={(it) => (it?.groupId || it?.id)}
             renderItem={({ item }) => {

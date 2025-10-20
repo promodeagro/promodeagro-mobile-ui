@@ -58,14 +58,14 @@ export function CartItemsList({
             </Text>
           </View>
 
-          <View style={{ alignItems: "center", minWidth: 96 }}>
+          <View style={{ alignItems: "center", minWidth: 112 }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <TouchableOpacity onPress={() => onDecrease(index)} style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "#F3F4F6", borderRadius: 8 }}>
-                <Text style={{ fontSize: 16, color: "#111827" }}>-</Text>
+              <TouchableOpacity onPress={() => onDecrease(index)} style={{ paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#F3F4F6", borderRadius: 10 }}>
+                <Text style={{ fontSize: 18, color: "#111827" }}>-</Text>
               </TouchableOpacity>
-              <Text style={{ width: 32, textAlign: "center", fontSize: 14, color: "#111827" }}>{item.quantity}</Text>
-              <TouchableOpacity onPress={() => onIncrease(index)} style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "#EDE9FE", borderRadius: 8 }}>
-                <Text style={{ fontSize: 16, color: "#6D28D9" }}>+</Text>
+              <Text style={{ width: 40, textAlign: "center", fontSize: 16, color: "#111827" }}>{item.quantity}</Text>
+              <TouchableOpacity onPress={() => onIncrease(index)} style={{ paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#EDE9FE", borderRadius: 10 }}>
+                <Text style={{ fontSize: 18, color: "#6D28D9" }}>+</Text>
               </TouchableOpacity>
             </View>
             <Text style={{ marginTop: 6, fontSize: 12, color: "#111827", fontFamily: "Inter_600SemiBold" }}>

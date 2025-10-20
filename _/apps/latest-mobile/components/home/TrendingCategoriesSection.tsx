@@ -78,13 +78,13 @@ export function TrendingCategoriesSection({ categories }: { categories: any[] })
                 borderRadius: 20,
                 marginBottom: 16,
                 padding: 20,
-                borderWidth: 2,
+                borderWidth: 1,
                 borderColor: colors.borderColor,
                 shadowColor: colors.borderColor,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 8,
-                elevation: 4,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 6,
+                elevation: 2,
               }}
             >
               <View

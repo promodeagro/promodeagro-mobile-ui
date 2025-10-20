@@ -10,8 +10,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
+import { BackButton } from '../components/BackButton';
 import {
-  ArrowLeft,
   Settings,
   Bell,
   Eye,
@@ -255,9 +255,9 @@ const SettingsScreen = () => {
         onPress={item.onPress}
         style={{
           backgroundColor: 'white',
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 8,
+          borderRadius: 10,
+          padding: 12,
+          marginBottom: 6,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 1 },
           shadowOpacity: 0.05,
@@ -275,13 +275,13 @@ const SettingsScreen = () => {
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             <View
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
+                width: 32,
+                height: 32,
+                borderRadius: 16,
                 backgroundColor: '#f3f4f6',
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginRight: 16,
+                marginRight: 12,
               }}
             >
               {item.icon}
@@ -289,19 +289,19 @@ const SettingsScreen = () => {
             <View style={{ flex: 1 }}>
               <Text
                 style={{
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: '600',
                   color: '#1f2937',
-                  marginBottom: 4,
+                  marginBottom: 3,
                 }}
               >
                 {item.title}
               </Text>
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: 13,
                   color: '#6b7280',
-                  lineHeight: 20,
+                  lineHeight: 18,
                 }}
               >
                 {item.subtitle}
@@ -343,7 +343,7 @@ const SettingsScreen = () => {
         style={{
           backgroundColor: 'white',
           paddingHorizontal: 20,
-          paddingVertical: 16,
+          paddingVertical: 12,
           borderBottomWidth: 1,
           borderBottomColor: '#e5e7eb',
           flexDirection: 'row',
@@ -351,12 +351,10 @@ const SettingsScreen = () => {
           justifyContent: 'space-between',
         }}
       >
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#1f2937" />
-        </TouchableOpacity>
+        <BackButton />
         <Text
           style={{
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: '600',
             color: '#1f2937',
           }}
@@ -368,18 +366,18 @@ const SettingsScreen = () => {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ padding: 20 }}>
+        <View style={{ padding: 16 }}>
           {/* General Settings */}
-          <View style={{ marginBottom: 24 }}>
+          <View style={{ marginBottom: 20 }}>
             <Text
               style={{
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: '600',
                 color: '#1f2937',
-                marginBottom: 16,
+                marginBottom: 12,
               }}
             >
               General
@@ -388,13 +386,13 @@ const SettingsScreen = () => {
           </View>
 
           {/* Notification Settings */}
-          <View style={{ marginBottom: 24 }}>
+          <View style={{ marginBottom: 20 }}>
             <Text
               style={{
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: '600',
                 color: '#1f2937',
-                marginBottom: 16,
+                marginBottom: 12,
               }}
             >
               Notifications
@@ -403,13 +401,13 @@ const SettingsScreen = () => {
           </View>
 
           {/* App Settings */}
-          <View style={{ marginBottom: 24 }}>
+          <View style={{ marginBottom: 20 }}>
             <Text
               style={{
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: '600',
                 color: '#1f2937',
-                marginBottom: 16,
+                marginBottom: 12,
               }}
             >
               App Preferences
@@ -418,13 +416,13 @@ const SettingsScreen = () => {
           </View>
 
           {/* Data Settings */}
-          <View style={{ marginBottom: 24 }}>
+          <View style={{ marginBottom: 20 }}>
             <Text
               style={{
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: '600',
                 color: '#1f2937',
-                marginBottom: 16,
+                marginBottom: 12,
               }}
             >
               Data & Storage
@@ -433,13 +431,13 @@ const SettingsScreen = () => {
           </View>
 
           {/* Account Settings */}
-          <View style={{ marginBottom: 24 }}>
+          <View style={{ marginBottom: 20 }}>
             <Text
               style={{
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: '600',
                 color: '#1f2937',
-                marginBottom: 16,
+                marginBottom: 12,
               }}
             >
               Account

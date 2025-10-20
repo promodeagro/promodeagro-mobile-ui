@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { ChevronDown, Minus, Plus, Star, X } from "lucide-react-native";
+import { ChevronDown, Minus, Plus, X } from "lucide-react-native";
 import { useState } from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useCart } from "../../utils/CartContext";
@@ -95,12 +95,10 @@ export function PopularThisWeekSection({ items }: { items: any[] }) {
                   marginRight: 16,
                   overflow: "hidden",
                   shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 12,
-                  elevation: 4,
-                  borderWidth: 1,
-                  borderColor: "#F3F4F6",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 4,
+                  elevation: 1,
                 }}
               >
                 <View style={{ position: "relative", height: 100 }}>
@@ -110,32 +108,6 @@ export function PopularThisWeekSection({ items }: { items: any[] }) {
                     contentFit="cover"
                   />
 
-                  {/* Rating Badge */}
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 8,
-                      left: 8,
-                      backgroundColor: "rgba(16, 185, 129, 0.9)",
-                      paddingHorizontal: 6,
-                      paddingVertical: 2,
-                      borderRadius: 8,
-                      flexDirection: "row",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Star size={10} color="#FFFFFF" fill="#FFFFFF" />
-                    <Text
-                      style={{
-                        fontSize: 10,
-                        fontFamily: "Inter_600SemiBold",
-                        color: "#FFFFFF",
-                        marginLeft: 2,
-                      }}
-                    >
-                      {item.rating}
-                    </Text>
-                  </View>
 
                   {/* Discount Badge if available */}
                   {(item.discount_percentage > 0 ||

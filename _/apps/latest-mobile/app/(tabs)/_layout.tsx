@@ -3,7 +3,8 @@ import {
     Grid3X3,
     Home,
     RotateCcw,
-    ShoppingCart
+    ShoppingCart,
+    User
 } from "lucide-react-native";
 import { Platform, useColorScheme, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,40 +14,32 @@ export default function TabLayout() {
   const isDark = colorScheme === "dark";
   const insets = useSafeAreaInsets();
 
-  const DuotoneTabIcon = ({
-    icon: Icon,
-    focused,
-    primaryColor,
-    secondaryColor,
-  }) => (
-    <View
-      style={{
-        width: 32,
-        height: 32,
-        justifyContent: "center",
-        alignItems: "center",
-        position: "relative",
-      }}
-    >
-      {/* Secondary icon layer (background fill) */}
-      <View style={{ position: "absolute" }}>
-        <Icon
-          color={focused ? secondaryColor : "#E5E7EB"}
-          size={20}
-          strokeWidth={0}
-          fill={focused ? secondaryColor : "#E5E7EB"}
-        />
+  const TabIcon = ({ icon: Icon, focused, activeColor = "#8B5CF6" }) => {
+    const bg = focused ? activeColor : "transparent";
+    const stroke = focused ? "#FFFFFF" : "#6B7280";
+    const border = focused ? activeColor : "#E5E7EB";
+    return (
+      <View
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: bg,
+          borderWidth: focused ? 0 : 1,
+          borderColor: border,
+          shadowColor: focused ? activeColor : "transparent",
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: focused ? 0.25 : 0,
+          shadowRadius: 8,
+          elevation: focused ? 6 : 0,
+        }}
+      >
+        <Icon size={20} color={stroke} strokeWidth={2.5} />
       </View>
-
-      {/* Primary icon layer (stroke with exact icon border) */}
-      <Icon
-        color={focused ? primaryColor : "#6B7280"}
-        size={20}
-        strokeWidth={focused ? 2.5 : 2}
-        fill="none"
-      />
-    </View>
-  );
+    );
+  };
 
   return (
     <Tabs
@@ -87,12 +80,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ focused }) => (
-            <DuotoneTabIcon
-              icon={Home}
-              focused={focused}
-              primaryColor="#6366F1"
-              secondaryColor="#C7D2FE"
-            />
+            <TabIcon icon={Home} focused={focused} activeColor="#8B5CF6" />
           ),
         }}
       />
@@ -107,12 +95,7 @@ export default function TabLayout() {
         options={{
           title: "Reorder",
           tabBarIcon: ({ focused }) => (
-            <DuotoneTabIcon
-              icon={RotateCcw}
-              focused={focused}
-              primaryColor="#10B981"
-              secondaryColor="#A7F3D0"
-            />
+            <TabIcon icon={RotateCcw} focused={focused} activeColor="#10B981" />
           ),
         }}
       />
@@ -121,12 +104,7 @@ export default function TabLayout() {
         options={{
           title: "Categories",
           tabBarIcon: ({ focused }) => (
-            <DuotoneTabIcon
-              icon={Grid3X3}
-              focused={focused}
-              primaryColor="#06B6D4"
-              secondaryColor="#A5F3FC"
-            />
+            <TabIcon icon={Grid3X3} focused={focused} activeColor="#06B6D4" />
           ),
         }}
       />
@@ -137,12 +115,7 @@ export default function TabLayout() {
           title: "Cart",
           href: null,
           tabBarIcon: ({ focused }) => (
-            <DuotoneTabIcon
-              icon={ShoppingCart}
-              focused={focused}
-              primaryColor="#6366F1"
-              secondaryColor="#C7D2FE"
-            />
+            <TabIcon icon={ShoppingCart} focused={focused} activeColor="#8B5CF6" />
           ),
         }}
       />
@@ -165,7 +138,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          href: null, // Hide from tab bar
+          title: "Account",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon={User} focused={focused} activeColor="#8B5CF6" />
+          ),
         }}
       />
       <Tabs.Screen

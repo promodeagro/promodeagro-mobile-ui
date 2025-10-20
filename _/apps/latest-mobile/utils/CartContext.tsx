@@ -86,7 +86,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
       pendingQuantitiesRef.current.clear();
       pendingNewItemsRef.current.clear();
-    }, 40); // apply within 40ms window
+    }, 24); // apply within one animation frame (~16-24ms)
   }, []);
 
   const addToCart = useCallback(async (productId: string, variationId: string, variationData: any) => {
@@ -151,10 +151,16 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, []);
 
   const updateQuantity = useCallback((cartKey: string, quantity: number) => {
-    // Queue update and flush in a micro-batch
-    pendingQuantitiesRef.current.set(cartKey, quantity);
+    const nextQty = Math.max(0, Number(quantity || 0));
+    const pending = pendingQuantitiesRef.current.get(cartKey);
+    const current = cartItems.get(cartKey)?.quantity;
+    // Skip if the quantity is already the same (avoid redundant flushes)
+    if (pending === nextQty || current === nextQty) {
+      return;
+    }
+    pendingQuantitiesRef.current.set(cartKey, nextQty);
     scheduleFlush();
-  }, [scheduleFlush]);
+  }, [scheduleFlush, cartItems]);
 
   const clearCart = useCallback(() => {
     setCartItems(new Map());

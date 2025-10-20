@@ -236,7 +236,7 @@ export default function PhoneAuthScreen() {
           style={{
             fontSize: 24,
             fontFamily: "Inter_700Bold",
-            color: "#2D2D2D",
+            color: "#111827",
             marginBottom: 8,
           }}
         >
@@ -247,8 +247,8 @@ export default function PhoneAuthScreen() {
           style={{
             fontSize: 16,
             fontFamily: "Inter_400Regular",
-            color: "#666666",
-            lineHeight: 22,
+            color: "#6B7280",
+            lineHeight: 24,
           }}
         >
           {step === "phone"
@@ -287,7 +287,7 @@ export default function PhoneAuthScreen() {
                 style={{
                   fontSize: 16,
                   fontFamily: "Inter_500Medium",
-                  color: "#2D2D2D",
+                  color: "#111827",
                   marginRight: 8,
                 }}
               >
@@ -298,7 +298,7 @@ export default function PhoneAuthScreen() {
                   flex: 1,
                   fontSize: 16,
                   fontFamily: "Inter_500Medium",
-                  color: "#2D2D2D",
+                  color: "#111827",
                 }}
                 placeholder="Enter mobile number"
                 placeholderTextColor="#9CA3AF"
@@ -358,7 +358,7 @@ export default function PhoneAuthScreen() {
                     textAlign: "center",
                     fontSize: 20,
                     fontFamily: "Inter_600SemiBold",
-                    color: "#2D2D2D",
+                    color: "#111827",
                   }}
                   value={digit}
                   onChangeText={(value) => handleOTPChange(value, index)}
@@ -403,7 +403,7 @@ export default function PhoneAuthScreen() {
                   style={{
                     fontSize: 14,
                     fontFamily: "Inter_500Medium",
-                    color: "#666666",
+                    color: "#6B7280",
                   }}
                 >
                   Resend OTP in {timer}s

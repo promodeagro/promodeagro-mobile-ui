@@ -660,18 +660,30 @@ export function useCheckout() {
               // Open in-app web auth session to keep user inside app; await their return
               const redirectUrl = LinkingExpo.createURL('payment-callback');
               console.log('Opening in-app browser with redirectUrl:', redirectUrl);
-              const result = await WebBrowser.openAuthSessionAsync(payUrl, redirectUrl);
-              console.log('AuthSession result:', result?.type);
+              try {
+                const result = await WebBrowser.openAuthSessionAsync(payUrl, redirectUrl, {
+                  showInRecents: false,
+                  enableBarCollapsing: false,
+                  showTitle: false,
+                });
+                console.log('AuthSession result:', result?.type);
               
-              // If user completed payment (not dismissed), show success and redirect
-              if (result?.type === 'success' || result?.type === 'dismiss') {
-                console.log('Payment session completed, starting verification...');
-                // Do not clear pendingOrderId; start polling to confirm
-                if (!navigationDoneRef.current) {
-                  setTimeout(() => { if (!navigationDoneRef.current) { pollPaymentStatus(); } }, 1000);
+                // If user completed payment (not dismissed), show success and redirect
+                if (result?.type === 'success' || result?.type === 'dismiss') {
+                  console.log('Payment session completed, starting verification...');
+                  // Do not clear pendingOrderId; start polling to confirm
+                  if (!navigationDoneRef.current) {
+                    setTimeout(() => { if (!navigationDoneRef.current) { pollPaymentStatus(); } }, 1000);
+                  }
+                } else {
+                  // Start polling as fallback
+                  if (!navigationDoneRef.current) {
+                    setTimeout(() => { if (!navigationDoneRef.current) { pollPaymentStatus(); } }, 1500);
+                  }
                 }
-              } else {
-                // Start polling as fallback
+              } catch (error) {
+                console.error('WebBrowser error:', error);
+                // Fallback: start polling anyway
                 if (!navigationDoneRef.current) {
                   setTimeout(() => { if (!navigationDoneRef.current) { pollPaymentStatus(); } }, 1500);
                 }

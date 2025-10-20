@@ -29,6 +29,7 @@ import { HomeScreenHeader } from "../../components/home/HomeScreenHeader";
 import { OffersSliderSection } from "../../components/home/OffersSliderSection";
 import { TrendingCategoriesSection } from "../../components/home/TrendingCategoriesSection";
 import LocationSelector from "../../components/LocationSelector";
+import { ProductCardSkeleton } from "../../components/ui/SkeletonLoader";
 
 export default function HomeScreen() {
   const [fontsLoaded] = useFonts({
@@ -92,6 +93,17 @@ export default function HomeScreen() {
   // Request location permission and get user location
   const requestLocationPermission = async () => {
     try {
+      // Check if location services are enabled
+      const isEnabled = await Location.hasServicesEnabledAsync();
+      if (!isEnabled) {
+        Alert.alert(
+          "Location Services Disabled",
+          "Please enable location services in your device settings to use this feature.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
       const { status } = await Location.requestForegroundPermissionsAsync();
       setLocationPermission(status);
       
@@ -106,6 +118,7 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('Error requesting location permission:', error);
+      // Don't show error to user for permission requests
     }
   };
 
@@ -114,6 +127,8 @@ export default function HomeScreen() {
     try {
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
+        timeout: 15000, // Increased timeout
+        maximumAge: 300000, // 5 minutes
       });
       
       // Reverse geocode to get address
@@ -129,7 +144,8 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('Error getting user location:', error);
-      setUserLocation("Current Location");
+      // Set a fallback location instead of "Current Location"
+      setUserLocation("Location unavailable");
     }
   };
 
@@ -286,11 +302,12 @@ export default function HomeScreen() {
     if (!address) return null;
     
     const parts = [];
-    if (address.house_number) parts.push(address.house_number);
-    if (address.address) parts.push(address.address);
-    if (address.landmark_area) parts.push(address.landmark_area);
+    if (address.house_number && address.house_number.trim()) parts.push(address.house_number.trim());
+    if (address.address && address.address.trim()) parts.push(address.address.trim());
+    if (address.landmark_area && address.landmark_area.trim()) parts.push(address.landmark_area.trim());
     
-    return parts.length > 0 ? parts.join(', ') : null;
+    const formattedAddress = parts.join(', ');
+    return formattedAddress.length > 0 ? formattedAddress : null;
   };
   
   const fullAddress = selectedAddress ? 
@@ -305,13 +322,19 @@ export default function HomeScreen() {
     displayLocation = fullAddress;
   } else if (defaultAddress && fullAddress) {
     displayLocation = fullAddress;
-  } else if (userLocation && userLocation !== "Current Location" && !userLocation.includes("undefined")) {
+  } else if (userLocation && userLocation !== "Current Location" && !userLocation.includes("undefined") && userLocation.length > 0) {
     displayLocation = userLocation;
   } else if (isAuthenticated) {
     displayLocation = "Select Address";
   } else {
     displayLocation = "Select location to order";
   }
+  
+  // Ensure we always have a valid display location
+  if (!displayLocation || displayLocation.trim() === "" || displayLocation === "undefined") {
+    displayLocation = "Select Address";
+  }
+  
 
   // Simple loading component
   const LoadingScreen = () => (
@@ -414,8 +437,28 @@ export default function HomeScreen() {
         )}
         
         {/* Real Products from API - Organized by specific categories */}
-        {!productsLoading && homePageProductsData?.data && homePageProductsData.data.length > 0 && (
-          <CategoryProductsSection categoryData={homePageProductsData.data} />
+        {productsLoading ? (
+          <View style={{ paddingHorizontal: 16, marginBottom: 32 }}>
+            <Text
+              style={{
+                fontSize: 20,
+                fontFamily: "Inter_700Bold",
+                color: "#111827",
+                marginBottom: 16,
+              }}
+            >
+              Loading Products...
+            </Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+              {Array.from({ length: 6 }).map((_, index) => (
+                <ProductCardSkeleton key={index} />
+              ))}
+            </View>
+          </View>
+        ) : (
+          homePageProductsData?.data && homePageProductsData.data.length > 0 && (
+            <CategoryProductsSection categoryData={homePageProductsData.data} />
+          )
         )}
         
         

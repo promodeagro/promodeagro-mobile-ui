@@ -20,7 +20,6 @@ import {
     Truck,
     XCircle,
     X as XIcon,
-    ArrowLeft,
 } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -40,11 +39,12 @@ import { Linking } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
+import { apiService } from '../../config/api';
 import React, { useCallback } from 'react';
 import { CategoryProductsSection } from "../../components/home/CategoryProductsSection";
 import OrderCancellationModal from "../../components/orders/OrderCancellationModal";
 import OrderModificationModal from "../../components/orders/OrderModificationModal";
-import { apiService } from "../../config/api";
+import { BackButton } from "../../components/BackButton";
 import { useCart } from "../../utils/CartContext";
 
 export default function OrdersScreen() {
@@ -71,8 +71,8 @@ export default function OrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Get real user ID from Redux authentication
-  const { user, isAuthenticated } = useSelector((state) => state.login);
+  // Get real user ID and token from Redux authentication
+  const { user, isAuthenticated, token } = useSelector((state) => state.login);
   const userId = user?.id || user?.userId;
 
   // Get home page products data from Redux (same as home page)
@@ -165,20 +165,13 @@ export default function OrdersScreen() {
     }
   }, [isAuthenticated, userId]);
 
-  // Refresh orders whenever this screen gains focus
+  // Refresh orders whenever this screen gains focus (no automatic polling)
   useFocusEffect(
     useCallback(() => {
-      let interval: any;
       if (isAuthenticated && userId) {
+        console.log('Orders screen focused, refreshing orders...');
         fetchOrders();
-        // Poll every 10s while focused to reflect backend status changes
-        interval = setInterval(() => {
-          fetchOrders();
-        }, 10000);
       }
-      return () => {
-        if (interval) clearInterval(interval);
-      };
     }, [isAuthenticated, userId])
   );
 
@@ -223,6 +216,16 @@ export default function OrdersScreen() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchOrders();
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -397,29 +400,125 @@ export default function OrdersScreen() {
     }
   ];
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchOrders();
-    setRefreshing(false);
-  };
-
   const handleModifyOrder = async (orderData: any) => {
     try {
-      console.log("Modifying order:", selectedOrder?.id, orderData);
-      alert("Order modified successfully!");
-      setModifyModalVisible(false);
+      if (!selectedOrder) {
+        Alert.alert('Error', 'No order selected for modification.');
+        return;
+      }
+
+      const orderId = String(selectedOrder.id || selectedOrder.orderId);
+      
+      // Show loading state
+      Alert.alert(
+        'Modifying Order',
+        'Please wait while we process your order modification...',
+        [],
+        { cancelable: false }
+      );
+
+      // Prepare modifications data
+      const modifications = {
+        items: orderData.items || selectedOrder.items,
+        deliverySlot: orderData.deliverySlot || selectedOrder.deliverySlot,
+        address: orderData.address || selectedOrder.address,
+        specialInstructions: orderData.specialInstructions || selectedOrder.specialInstructions,
+        modifiedAt: new Date().toISOString(),
+      };
+
+      // Call the modify order API
+      const result = await apiService.modifyOrder(orderId, modifications, userId, token);
+      
+      if (result && result.success) {
+        Alert.alert(
+          'Order Modified',
+          'Your order has been successfully modified!',
+          [
+            {
+              text: 'View Updated Order',
+              onPress: () => {
+                setModifyModalVisible(false);
+                router.push(`/order-confirmation/${orderId}`);
+              }
+            }
+          ]
+        );
+        
+        // Refresh orders list
+        await fetchOrders();
+      } else {
+        Alert.alert(
+          'Modification Failed',
+          result.message || 'Failed to modify order. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
     } catch (error: any) {
-      alert("Failed to modify order: " + error.message);
+      console.error('Modify order error:', error);
+      Alert.alert(
+        'Modification Failed',
+        error?.message || 'Failed to modify order. Please try again.',
+        [
+          { text: 'Try Again', onPress: () => handleModifyOrder(orderData) },
+          { text: 'Cancel', style: 'cancel' }
+        ]
+      );
     }
   };
 
   const handleCancelOrder = async (cancelData: any) => {
     try {
-      console.log("Cancelling order:", selectedOrder?.id, cancelData);
-      alert("Order cancelled successfully!");
-      setCancelModalVisible(false);
+      if (!selectedOrder) {
+        Alert.alert('Error', 'No order selected for cancellation.');
+        return;
+      }
+
+      const orderId = String(selectedOrder.id || selectedOrder.orderId);
+      const reason = cancelData.reason || 'Customer request';
+      
+      // Show loading state
+      Alert.alert(
+        'Cancelling Order',
+        'Please wait while we process your order cancellation...',
+        [],
+        { cancelable: false }
+      );
+
+      // Call the cancel order API
+      const result = await apiService.cancelOrder(orderId, reason, userId, token);
+      
+      if (result && result.success) {
+        Alert.alert(
+          'Order Cancelled',
+          'Your order has been successfully cancelled!',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setCancelModalVisible(false);
+                // Refresh orders list
+                fetchOrders();
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Cancellation Failed',
+          result.message || 'Failed to cancel order. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
     } catch (error: any) {
-      alert("Failed to cancel order: " + error.message);
+      console.error('Cancel order error:', error);
+      Alert.alert(
+        'Cancellation Failed',
+        error?.message || 'Failed to cancel order. Please try again.',
+        [
+          { text: 'Try Again', onPress: () => handleCancelOrder(cancelData) },
+          { text: 'Cancel', style: 'cancel' }
+        ]
+      );
     }
   };
 
@@ -542,51 +641,89 @@ export default function OrdersScreen() {
   const handlePayNow = async (order: any) => {
     try {
       const orderId = String(order.id || order.orderId);
-      const payUrl = order.paymentLink || order.payment_link || order.payment_url;
-      if (!payUrl) {
-        Alert.alert('Payment', 'No payment link available. Please try from Orders later.');
-        return;
-      }
+      
+      // Show loading state
+      Alert.alert(
+        'Processing Payment',
+        'Please wait while we process your payment...',
+        [],
+        { cancelable: false }
+      );
 
-      pendingOrderIdRef.current = orderId;
+      // Call the pay order API
+      const paymentResult = await apiService.payOrder(orderId, 'online', userId, token);
+      
+      if (paymentResult && paymentResult.paymentUrl) {
+        // If we get a payment URL, open it for payment
+        const payUrl = paymentResult.paymentUrl;
+        pendingOrderIdRef.current = orderId;
 
-      const onAppStateChange = async (next: any) => {
-        if (appStateRef.current.match(/inactive|background/) && next === 'active') {
-          const ok = await verifyOrderPaid(orderId);
-          if (ok) {
-            router.push(`/order-confirmation/${orderId}`);
-            pendingOrderIdRef.current = null;
-          } else {
-            // start a short poll window
-            const settled = await pollOrderUntilPaid(orderId, 4, 3000);
-            if (settled) {
+        const onAppStateChange = async (next: any) => {
+          if (appStateRef.current.match(/inactive|background/) && next === 'active') {
+            const ok = await verifyOrderPaid(orderId);
+            if (ok) {
               router.push(`/order-confirmation/${orderId}`);
               pendingOrderIdRef.current = null;
             } else {
-              Alert.alert('Payment Pending', 'Payment not confirmed yet.');
+              // start a short poll window
+              const settled = await pollOrderUntilPaid(orderId, 4, 3000);
+              if (settled) {
+                router.push(`/order-confirmation/${orderId}`);
+                pendingOrderIdRef.current = null;
+              } else {
+                Alert.alert('Payment Pending', 'Payment not confirmed yet.');
+              }
             }
           }
-        }
-        appStateRef.current = next;
-      };
-      AppState.removeEventListener?.('change', onAppStateChange as any);
-      AppState.addEventListener('change', onAppStateChange as any);
+          appStateRef.current = next;
+        };
+        AppState.removeEventListener?.('change', onAppStateChange as any);
+        AppState.addEventListener('change', onAppStateChange as any);
 
-      const isUpi = typeof payUrl === 'string' && payUrl.startsWith('upi://');
-      const isReceipt = typeof payUrl === 'string' && payUrl.includes('/mycart/address/order-placed/');
-      if (isUpi) {
-        await Linking.openURL(payUrl);
-        setTimeout(() => { pollOrderUntilPaid(orderId, 4, 3000); }, 1500);
-      } else if (!isReceipt) {
-        const redirectUrl = LinkingExpo.createURL('payment-callback');
-        await WebBrowser.openAuthSessionAsync(payUrl, redirectUrl);
-        setTimeout(() => { pollOrderUntilPaid(orderId, 4, 3000); }, 1500);
+        const isUpi = typeof payUrl === 'string' && payUrl.startsWith('upi://');
+        const isReceipt = typeof payUrl === 'string' && payUrl.includes('/mycart/address/order-placed/');
+        if (isUpi) {
+          await Linking.openURL(payUrl);
+          setTimeout(() => { pollOrderUntilPaid(orderId, 4, 3000); }, 1500);
+        } else if (!isReceipt) {
+          const redirectUrl = LinkingExpo.createURL('payment-callback');
+          try {
+            await WebBrowser.openAuthSessionAsync(payUrl, redirectUrl, {
+              showInRecents: false,
+              enableBarCollapsing: false,
+              showTitle: false,
+            });
+          } catch (error) {
+            console.error('WebBrowser error:', error);
+          }
+          setTimeout(() => { pollOrderUntilPaid(orderId, 4, 3000); }, 1500);
+        } else {
+          // Avoid external receipt; verify in-app instead
+          setTimeout(() => { pollOrderUntilPaid(orderId, 4, 3000); }, 1000);
+        }
       } else {
-        // Avoid external receipt; verify in-app instead
-        setTimeout(() => { pollOrderUntilPaid(orderId, 4, 3000); }, 1000);
+        // If payment is already processed or no payment needed
+        Alert.alert(
+          'Payment Status',
+          paymentResult.message || 'Payment has been processed successfully!',
+          [
+            {
+              text: 'View Order',
+              onPress: () => router.push(`/order-confirmation/${orderId}`)
+            }
+          ]
+        );
       }
     } catch (e: any) {
-      Alert.alert('Payment', e?.message || 'Failed to start payment.');
+      console.error('Payment error:', e);
+      Alert.alert(
+        'Payment Failed', 
+        e?.message || 'Failed to process payment. Please try again.',
+        [
+          { text: 'Try Again', onPress: () => handlePayNow(order) },
+          { text: 'Cancel', style: 'cancel' }
+        ]
+      );
     }
   };
 
@@ -615,12 +752,10 @@ export default function OrdersScreen() {
         padding: 20,
         marginBottom: 16,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-        elevation: 6,
-        borderWidth: 1,
-        borderColor: "#F3F4F6",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
       }}
     >
       {/* Order Header */}
@@ -809,8 +944,6 @@ export default function OrdersScreen() {
             borderRadius: 12,
             paddingVertical: 12,
             alignItems: "center",
-            borderWidth: 1,
-            borderColor: "#E2E8F0",
           }}
         >
           <Text
@@ -974,9 +1107,9 @@ export default function OrdersScreen() {
       {/* Header */}
       <View
         style={{
-          paddingTop: insets.top + 16,
+          paddingTop: insets.top + 8,
           paddingHorizontal: 20,
-          paddingBottom: 16,
+          paddingBottom: 12,
           backgroundColor: "#FFFFFF",
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
@@ -985,29 +1118,26 @@ export default function OrdersScreen() {
           elevation: 4,
         }}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ position: 'absolute', left: 16, top: insets.top + 10, backgroundColor: '#111827', borderRadius: 16, padding: 6, opacity: 0.9 }}
-        >
-          <ArrowLeft size={16} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={{ position: 'absolute', left: 16, top: insets.top + 6 }}>
+          <BackButton size={28} />
+        </View>
         <Text
           style={{
-            fontSize: 24,
-            fontFamily: "Inter_800ExtraBold",
+            fontSize: 22,
+            fontFamily: "Inter_700Bold",
             color: "#111827",
-            marginBottom: 8,
-            marginLeft: 28,
+            marginBottom: 6,
+            marginLeft: 36,
           }}
         >
           My Orders
         </Text>
         <Text
           style={{
-            fontSize: 16,
+            fontSize: 15,
             fontFamily: "Inter_500Medium",
             color: "#6B7280",
-            marginBottom: 20,
+            marginBottom: 16,
           }}
         >
           Track and manage your orders
@@ -1017,7 +1147,7 @@ export default function OrdersScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 12 }}
+          contentContainerStyle={{ gap: 8 }}
         >
           {[
             { key: "all", label: "All Orders", count: orders.length },
@@ -1046,30 +1176,30 @@ export default function OrdersScreen() {
               key={tab.key}
               onPress={() => setActiveTab(tab.key)}
               style={{
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderRadius: 24,
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+                borderRadius: 20,
                 backgroundColor: activeTab === tab.key ? "#8B5CF6" : "#FFFFFF",
                 flexDirection: "row",
                 alignItems: "center",
                 shadowColor: activeTab === tab.key ? "#8B5CF6" : "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: activeTab === tab.key ? 0.3 : 0.1,
-                shadowRadius: 8,
-                elevation: 4,
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: activeTab === tab.key ? 0.25 : 0.08,
+                shadowRadius: 6,
+                elevation: 3,
                 borderWidth: activeTab === tab.key ? 0 : 1,
                 borderColor: "#E5E7EB",
               }}
             >
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: 13,
                   fontFamily:
                     activeTab === tab.key
                       ? "Inter_600SemiBold"
                       : "Inter_500Medium",
                   color: activeTab === tab.key ? "#FFFFFF" : "#374151",
-                  marginRight: tab.count > 0 ? 8 : 0,
+                  marginRight: tab.count > 0 ? 6 : 0,
                 }}
               >
                 {tab.label}
@@ -1081,14 +1211,14 @@ export default function OrdersScreen() {
                       activeTab === tab.key
                         ? "rgba(255,255,255,0.2)"
                         : "#F3F4F6",
-                    paddingHorizontal: 8,
+                    paddingHorizontal: 6,
                     paddingVertical: 2,
-                    borderRadius: 12,
+                    borderRadius: 10,
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: 12,
+                      fontSize: 11,
                       fontFamily: "Inter_600SemiBold",
                       color: activeTab === tab.key ? "#FFFFFF" : "#6B7280",
                     }}
@@ -1106,8 +1236,8 @@ export default function OrdersScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingTop: 16,
+          paddingHorizontal: 16,
+          paddingTop: 12,
           paddingBottom: insets.bottom + 100,
         }}
         showsVerticalScrollIndicator={false}
@@ -1300,12 +1430,10 @@ export default function OrdersScreen() {
                 padding: 24,
                 marginBottom: 24,
                 shadowColor: "#000",
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.12,
-                shadowRadius: 16,
-                elevation: 6,
-                borderWidth: 1,
-                borderColor: "#F3F4F6",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 4,
+                elevation: 2,
               }}
             >
               <Text

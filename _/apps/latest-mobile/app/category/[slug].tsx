@@ -41,6 +41,7 @@ export default function CategoryScreen() {
 
   const { slug } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom + 24, 140);
   const dispatch = useDispatch();
 
   // Redux state with safe access
@@ -68,7 +69,7 @@ export default function CategoryScreen() {
     if (categoriesData.status === '' || categoriesData.status === status.ERROR) {
       dispatch(fetchCategories());
     }
-  }, []);
+  }, [dispatch]);
 
   // Update subcategories when category changes
   useEffect(() => {
@@ -123,11 +124,12 @@ export default function CategoryScreen() {
   const transformedProducts = subcategoryProductsData.data?.products?.map((product) => ({
     id: product.groupId,
     name: product.name,
-    price: product.variations?.[0]?.price || 0,
-    originalPrice: product.variations?.[0]?.mrp || product.variations?.[0]?.price || 0,
-    unit: product.variations?.[0]?.unit || "1 unit",
-    brand: "Promode agro farms",
+    price: product.variations?.[0]?.price || product.price || 0,
+    originalPrice: product.variations?.[0]?.mrp || product.variations?.[0]?.price || product.price || 0,
+    original_price: product.variations?.[0]?.mrp || product.variations?.[0]?.price || product.price || 0,
+    unit: product.variations?.[0]?.unit || product.unit || "1 unit",
     image: product.image,
+    images: product.images || [product.image],
     rating: 4.5,
     reviews: Math.floor(Math.random() * 100) + 10,
     category: product.category,
@@ -146,7 +148,16 @@ export default function CategoryScreen() {
     loadProductsBySubcategory(subcategory.name);
   };
 
-  if (!fontsLoaded || loading) {
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#F8FAFC", justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#8B5CF6" />
+        <Text style={{ marginTop: 16, fontSize: 16, color: "#6B7280" }}>Loading fonts...</Text>
+      </View>
+    );
+  }
+
+  if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: "#F8FAFC", justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#8B5CF6" />
@@ -155,8 +166,28 @@ export default function CategoryScreen() {
     );
   }
 
+  if (!currentCategory) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#F8FAFC", justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ fontSize: 18, color: "#6B7280", marginBottom: 8 }}>Category not found</Text>
+        <Text style={{ fontSize: 14, color: "#9CA3AF" }}>The category "{slug}" does not exist</Text>
+      </View>
+    );
+  }
+
   const categoryName = currentCategory?.CategoryName || "Products";
   const filteredProducts = transformedProducts;
+
+  // Debug logging
+  console.log('Category Debug:', {
+    slug,
+    currentCategory,
+    subcategories: subcategories.length,
+    selectedSubcategory,
+    products: filteredProducts.length,
+    categoriesData: categoriesData.status,
+    firstProduct: filteredProducts[0]
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F8FAFC" }}>
@@ -182,7 +213,7 @@ export default function CategoryScreen() {
         />
 
         <View style={{ flex: 1 }}>
-          <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+          <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
             <TouchableOpacity
               onPress={() => setShowFiltersModal(true)}
               style={{
@@ -214,8 +245,8 @@ export default function CategoryScreen() {
           <ScrollView
             style={{ flex: 1 }}
             contentContainerStyle={{
-              paddingHorizontal: 16,
-              paddingBottom: 100,
+              paddingHorizontal: 12,
+              paddingBottom: bottomPadding,
             }}
             showsVerticalScrollIndicator={false}
           >
@@ -233,6 +264,7 @@ export default function CategoryScreen() {
                     flexDirection: "row",
                     flexWrap: "wrap",
                     justifyContent: "space-between",
+                    gap: 8,
                   }}
                 >
                   {filteredProducts.map((product) => (
@@ -255,6 +287,8 @@ export default function CategoryScreen() {
                 )}
               </>
             )}
+            {/* Bottom spacer to ensure last row is fully visible above tab bar / overlays */}
+            <View style={{ height: insets.bottom + 24 }} />
           </ScrollView>
         </View>
       </View>

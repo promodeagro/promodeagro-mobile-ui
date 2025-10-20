@@ -10,8 +10,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
+import { BackButton } from '../components/BackButton';
 import {
-  ArrowLeft,
   Bell,
   BellOff,
   Settings,
@@ -124,9 +124,7 @@ const NotificationsScreen = () => {
           justifyContent: 'space-between',
         }}
       >
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#1f2937" />
-        </TouchableOpacity>
+        <BackButton />
         <Text
           style={{
             fontSize: 20,

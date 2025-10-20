@@ -138,12 +138,10 @@ export function FlashDealsSection({ deals }: { deals: any[] }) {
                   marginRight: 16,
                   overflow: "hidden",
                   shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 8 },
-                  shadowOpacity: 0.12,
-                  shadowRadius: 16,
-                  elevation: 6,
-                  borderWidth: 1,
-                  borderColor: "#F3F4F6",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 4,
+                  elevation: 1,
                   minHeight: 260, // Ensure minimum height for full content
                 }}
               >

@@ -3,10 +3,12 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } fr
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Heart, Plus, Minus, Star } from "lucide-react-native";
+import { Heart } from "lucide-react-native";
 import { Image } from "expo-image";
 import { apiService } from "../../../config/api";
 import { useCart } from "../../../utils/CartContext";
+import { BackButton } from "../../../components/BackButton";
+import { BlinkitQuantityControl } from "../../../components/ui/BlinkitQuantityControl";
 
 interface ProductVariant {
   id: string;
@@ -163,36 +165,24 @@ export default function ProductDetailScreen() {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          paddingTop: insets.top + 16,
+          paddingTop: insets.top + 8,
           paddingHorizontal: 20,
-          paddingBottom: 16,
+          paddingBottom: 12,
           backgroundColor: "#FFFFFF",
           borderBottomWidth: 1,
           borderBottomColor: "#E5E7EB",
         }}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: "#F3F4F6",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <ArrowLeft size={20} color="#374151" />
-        </TouchableOpacity>
+        <BackButton size={32} />
 
         <Text
           style={{
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: "600",
             color: "#111827",
             flex: 1,
             textAlign: "center",
-            marginHorizontal: 16,
+            marginHorizontal: 12,
           }}
           numberOfLines={1}
         >
@@ -201,31 +191,31 @@ export default function ProductDetailScreen() {
 
         <TouchableOpacity
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
+            width: 32,
+            height: 32,
+            borderRadius: 16,
             backgroundColor: "#F3F4F6",
             justifyContent: "center",
             alignItems: "center",
           }}
         >
-          <Heart size={18} color="#6B7280" />
+          <Heart size={16} color="#6B7280" />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingBottom: insets.bottom + 120,
+          paddingBottom: insets.bottom + 100,
         }}
         showsVerticalScrollIndicator={false}
       >
         {/* Product Image */}
-        <View style={{ backgroundColor: "#FFFFFF", padding: 20 }}>
+        <View style={{ backgroundColor: "#FFFFFF", padding: 16 }}>
           <View
             style={{
-              height: 250,
-              borderRadius: 16,
+              height: 200,
+              borderRadius: 12,
               overflow: "hidden",
               backgroundColor: "#F8F9FA",
             }}
@@ -249,25 +239,6 @@ export default function ProductDetailScreen() {
               </View>
             )}
             
-            {/* Rating Badge */}
-            <View
-              style={{
-                position: "absolute",
-                top: 12,
-                left: 12,
-                backgroundColor: "rgba(16, 185, 129, 0.9)",
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 8,
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-            >
-              <Star size={12} color="#FFFFFF" fill="#FFFFFF" />
-              <Text style={{ color: "white", fontSize: 12, fontWeight: "600", marginLeft: 4 }}>
-                4.5
-              </Text>
-            </View>
 
             {/* Discount Badge if available */}
             {currentVariation && currentVariation.mrp > 0 && currentVariation.mrp > currentVariation.price && (
@@ -398,82 +369,16 @@ export default function ProductDetailScreen() {
             </View>
           )}
 
-          {/* Inline Cart Controls (always visible) */}
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            {currentCartQuantity === 0 ? (
-              <TouchableOpacity
-                onPress={handleAddToCart}
-                disabled={!isInStock || !currentVariation}
-                style={{
-                  width: 40,
-                  height: 40,
-                  backgroundColor: isInStock ? "#8B5CF6" : "#D1D5DB",
-                  borderRadius: 20,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginRight: 16,
-                  opacity: isInStock ? 1 : 0.6,
-                }}
-              >
-                <Plus size={18} color="#FFFFFF" />
-              </TouchableOpacity>
-            ) : (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "#8B5CF6",
-                  borderRadius: 16,
-                  paddingHorizontal: 6,
-                  paddingVertical: 3,
-                  marginRight: 16,
-                }}
-              >
-                <TouchableOpacity
-                  onPress={handleDecrease}
-                  disabled={!isInStock}
-                  style={{ width: 28, height: 32, justifyContent: "center", alignItems: "center", opacity: isInStock ? 1 : 0.6 }}
-                >
-                  <Minus size={16} color="#FFFFFF" />
-                </TouchableOpacity>
-                <View style={{ paddingHorizontal: 6, paddingVertical: 2, minWidth: 16, justifyContent: "center", alignItems: "center" }}>
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>{currentCartQuantity}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={handleIncrease}
-                  disabled={!isInStock}
-                  style={{ width: 28, height: 32, justifyContent: "center", alignItems: "center", opacity: isInStock ? 1 : 0.6 }}
-                >
-                  <Plus size={16} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            )}
-
-            <TouchableOpacity
-              onPress={handleAddToCart}
-              disabled={!isInStock || !currentVariation}
-              style={{
-                flex: 1,
-                backgroundColor: isInStock ? "#8B5CF6" : "#D1D5DB",
-                borderRadius: 12,
-                paddingVertical: 12,
-                flexDirection: "row",
-                justifyContent: "center",
-                alignItems: "center",
-                opacity: isInStock ? 1 : 0.6,
-              }}
-            >
-              <Text style={{ fontSize: 16, fontWeight: "600", color: "#FFFFFF", marginRight: 8 }}>
-                {currentCartQuantity === 0 ? "Add to Cart" : "Add One More"}
-              </Text>
-              {currentVariation && (
-                <Text style={{ fontSize: 16, fontWeight: "600", color: "#FFFFFF" }}>
-                  ₹{(
-                    currentVariation.price * (currentCartQuantity > 0 ? currentCartQuantity : 1)
-                  ).toFixed(2)}
-                </Text>
-              )}
-            </TouchableOpacity>
+          {/* Blinkit-style Quantity Controls (single source of truth) */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-start", marginBottom: 16 }}>
+            <BlinkitQuantityControl
+              currentQuantity={currentCartQuantity}
+              isInStock={!!(isInStock && currentVariation)}
+              onAddToCart={handleAddToCart}
+              onIncreaseQuantity={handleIncrease}
+              onDecreaseQuantity={handleDecrease}
+              size="large"
+            />
           </View>
 
           {product.description && (

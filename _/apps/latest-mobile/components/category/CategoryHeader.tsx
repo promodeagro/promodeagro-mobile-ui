@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { ArrowLeft, Search } from "lucide-react-native";
+import { Search } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { BackButton } from "../BackButton";
 
 export default function CategoryHeader({ categoryName }) {
   const insets = useSafeAreaInsets();
@@ -29,12 +30,9 @@ export default function CategoryHeader({ categoryName }) {
           marginBottom: 16,
         }}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ marginRight: 16 }}
-        >
-          <ArrowLeft size={24} color="#111827" />
-        </TouchableOpacity>
+        <View style={{ marginRight: 16 }}>
+          <BackButton size={40} />
+        </View>
 
         <Text
           style={{

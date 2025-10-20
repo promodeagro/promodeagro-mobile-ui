@@ -154,7 +154,7 @@ export function HomeScreenHeader({
   ];
 
   return (
-    <View style={{ position: "relative", paddingTop: insets.top + 16 }}>
+    <View style={{ position: "relative", paddingTop: insets.top + 8 }}>
       {/* Fallback Gradient when weather not loaded */}
       <LinearGradient
         colors={["#F8FAFC", "#E2E8F0"]}
@@ -173,16 +173,16 @@ export function HomeScreenHeader({
         {/* Header Content - Animated */}
         <Animated.View
           style={{
-            paddingHorizontal: 24,
+            paddingHorizontal: 20,
             paddingBottom: headerOpacity.interpolate({
               inputRange: [0, 1],
-              outputRange: [0, 20], // Use padding instead of height
+              outputRange: [0, 12], // Reduced padding
             }),
             opacity: headerOpacity,
             transform: [{ translateY: headerTranslateY }],
             height: headerOpacity.interpolate({
               inputRange: [0, 1],
-              outputRange: [0, 60], // Decreased height for more compact header when scrolling up
+              outputRange: [0, 50], // Reduced height for more compact header
             }),
             overflow: 'hidden',
           }}
@@ -192,88 +192,55 @@ export function HomeScreenHeader({
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "flex-start",
-              marginBottom: 16,
+              marginBottom: 12,
             }}
           >
             <View style={{ flex: 1 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 6,
-                }}
-              >
-                <MapPin size={16} color="#6366F1" />
-                <Text
-                  style={getTextStyle({
-                    fontSize: 14,
-                    fontFamily: getFont("Inter_500Medium"),
-                    color: "#6366F1",
-                    marginLeft: 4,
-                  })}
-                >
-                  Delivering to
-                </Text>
-              </View>
-
+              {/* Address in horizontal line */}
               <TouchableOpacity
                 onPress={onLocationPress}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  marginBottom: 4,
-                  flex: 1,
-                  backgroundColor: userLocation.includes("Add") ? "#FEF3C7" : "transparent",
-                  paddingHorizontal: userLocation.includes("Add") ? 12 : 0,
-                  paddingVertical: userLocation.includes("Add") ? 8 : 0,
-                  borderRadius: userLocation.includes("Add") ? 12 : 0,
-                  borderWidth: userLocation.includes("Add") ? 1 : 0,
-                  borderColor: userLocation.includes("Add") ? "#F59E0B" : "transparent",
+                  marginBottom: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  backgroundColor: (userLocation && (userLocation.includes("Add") || userLocation.includes("Select"))) ? "#FEF3C7" : "#F8FAFC",
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: (userLocation && (userLocation.includes("Add") || userLocation.includes("Select"))) ? "#F59E0B" : "#E2E8F0",
                 }}
               >
-                {userLocation.includes("Add") ? (
-                  <>
-                    <MapPin size={16} color="#F59E0B" style={{ marginRight: 8 }} />
-                    <Text
-                      style={getTextStyle({
-                        fontSize: 16,
-                        fontFamily: getFont("Inter_600SemiBold"),
-                        color: "#F59E0B",
-                        flex: 1,
-                      })}
-                    >
-                      {userLocation}
-                    </Text>
-                    <ChevronDown size={16} color="#F59E0B" />
-                  </>
-                ) : (
-                  <>
-                    <Text
-                      style={getTextStyle({
-                        fontSize: 18,
-                        fontFamily: getFont("Inter_700Bold"),
-                        color: "#6B7280",
-                        flex: 1,
-                      })}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                    >
-                      {addressType ? (
-                        <>
-                          <Text style={getTextStyle({ fontFamily: getFont("Inter_700Bold"), color: "#1F2937" })}>{addressType}</Text>
-                          <Text style={getTextStyle({ fontFamily: getFont("Inter_400Regular"), color: "#6B7280", fontSize: 16 })}> - {userLocation}</Text>
-                        </>
-                      ) : (
-                        <Text style={{ color: "#1F2937" }}>{userLocation}</Text>
-                      )}
-                    </Text>
-                    <ChevronDown
-                      size={16}
-                      color="#6B7280"
-                      style={{ marginLeft: 4, marginRight: 8 }}
-                    />
-                  </>
-                )}
+                <MapPin size={18} color={(userLocation && (userLocation.includes("Add") || userLocation.includes("Select"))) ? "#F59E0B" : "#6366F1"} />
+                <Text
+                  style={getTextStyle({
+                    fontSize: 14,
+                    fontFamily: getFont("Inter_500Medium"),
+                    color: "#6366F1",
+                    marginLeft: 8,
+                    marginRight: 4,
+                  })}
+                >
+                  Delivering to
+                </Text>
+                <Text
+                  style={getTextStyle({
+                    fontSize: 15,
+                    fontFamily: getFont("Inter_600SemiBold"),
+                    color: (userLocation && (userLocation.includes("Add") || userLocation.includes("Select"))) ? "#F59E0B" : "#1F2937",
+                    flex: 1,
+                  })}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {userLocation && userLocation !== "undefined" && userLocation.trim() !== "" 
+                    ? userLocation 
+                    : "Tap to select address"}
+                </Text>
+                <ChevronDown
+                  size={16}
+                  color={(userLocation && (userLocation.includes("Add") || userLocation.includes("Select"))) ? "#F59E0B" : "#6B7280"}
+                />
                 
                 {locationPermission === 'denied' && !userLocation.includes("Add") && !userLocation.includes("Select") && (
                   <View
@@ -300,25 +267,7 @@ export function HomeScreenHeader({
             </View>
 
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-
-              <TouchableOpacity
-                onPress={() => router.push("/(tabs)/profile")}
-                style={{
-                  width: 44,
-                  height: 44,
-                  backgroundColor: "rgba(99, 102, 241, 0.9)",
-                  borderRadius: 22,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  shadowColor: "#6366F1",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 8,
-                  elevation: 4,
-                }}
-              >
-                <Text style={{ fontSize: 18 }}>👤</Text>
-              </TouchableOpacity>
+              {/* Profile button removed - now in navigation bar */}
             </View>
           </View>
         </Animated.View>
@@ -326,12 +275,12 @@ export function HomeScreenHeader({
         {/* Enhanced Search Bar - Animated */}
         <Animated.View
           style={{
-            paddingHorizontal: 24,
+            paddingHorizontal: 20,
             marginBottom: 0, // Remove bottom margin to stick with categories
             transform: [{ translateY: searchTranslateY }],
             marginTop: headerOpacity.interpolate({
               inputRange: [0, 1],
-              outputRange: [20, 0], // Add padding top when header collapses
+              outputRange: [12, 0], // Reduced padding top when header collapses
             }),
           }}
         >
@@ -402,7 +351,7 @@ export function HomeScreenHeader({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 24 }}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
           >
             {displayCategories.map((categoryName, index) => {
               // Find the actual category data from the categories prop
@@ -418,10 +367,10 @@ export function HomeScreenHeader({
                       selectedCategory === categoryName
                         ? categoryData.color
                         : "rgba(255, 255, 255, 0.9)",
-                    paddingHorizontal: 20,
-                    paddingVertical: 12,
-                    borderRadius: 24,
-                    marginRight: 16,
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    borderRadius: 20,
+                    marginRight: 12,
                     flexDirection: "row",
                     alignItems: "center",
                     shadowColor:
